@@ -11,12 +11,9 @@ export namespace BinaryFloats {
     while (fraction.length < 52) fraction += '0';
 
     if (
-      sign.length !== 1 ||
-      exponent.length !== 11 ||
-      fraction.length !== 52 ||
-      !sign.match(/[01]+/g) ||
-      !exponent.match(/[01]+/g) ||
-      !fraction.match(/[01]+/g)
+      !sign.match(/[01]{1}/g) ||
+      !exponent.match(/[01]{11}/g) ||
+      !fraction.match(/[01]{52}/g)
     )
       throw new Error(
         'Wrong bit count/input value for a IEEE754 double precision number.'
