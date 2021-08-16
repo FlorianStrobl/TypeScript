@@ -4,22 +4,22 @@ export namespace BinaryFloats {
   export function createBinaryFloat(
     sign: string = '0',
     exponent: string = '00000000000',
-    fraction: string = '0000000000000000000000000000000000000000000000000000'
+    mantissa: string = '0000000000000000000000000000000000000000000000000000'
   ): string {
     if (sign.length === 0) sign = '0';
     while (exponent.length < 11) exponent = '0' + exponent;
-    while (fraction.length < 52) fraction += '0';
+    while (mantissa.length < 52) mantissa += '0';
 
     if (
       !sign.match(/[01]{1}/g) ||
       !exponent.match(/[01]{11}/g) ||
-      !fraction.match(/[01]{52}/g)
+      !mantissa.match(/[01]{52}/g)
     )
       throw new Error(
         'Wrong bit count/input value for a IEEE754 double precision number.'
       );
 
-    return sign + exponent + fraction;
+    return sign + exponent + mantissa;
   }
 
   export function binaryFloatToNumber(binary: string): number {
@@ -59,92 +59,92 @@ export namespace BinaryFloats {
   }
 
   export namespace GetBits {
-    export function getSign(binary: string | number): string {
-      if (typeof binary === 'number') binary = numberToBinaryFloat(binary);
+    export function getSign(number: string | number): string {
+      if (typeof number === 'number') number = numberToBinaryFloat(number);
 
       // check for invalid input
-      validBinary(binary);
+      validBinary(number);
 
-      return binary[0];
+      return number[0];
     }
 
-    export function getExponent(binary: string | number): string {
-      if (typeof binary === 'number') binary = numberToBinaryFloat(binary);
+    export function getExponent(number: string | number): string {
+      if (typeof number === 'number') number = numberToBinaryFloat(number);
 
       // check for invalid input
-      validBinary(binary);
+      validBinary(number);
 
-      return binary.slice(1, -52);
+      return number.slice(1, -52);
     }
 
-    export function getFraction(binary: string | number): string {
-      if (typeof binary === 'number') binary = numberToBinaryFloat(binary);
+    export function getMantissa(number: string | number): string {
+      if (typeof number === 'number') number = numberToBinaryFloat(number);
 
       // check for invalid input
-      validBinary(binary);
+      validBinary(number);
 
-      return binary.slice(12);
+      return number.slice(12);
     }
   }
 
   export namespace SetBits {
     export function setSign<T extends string | number>(
-      binary: T,
+      number: T,
       sign: string
     ): T {
       let outputString: boolean = true;
-      if (typeof binary === 'number') {
+      if (typeof number === 'number') {
         // @ts-ignore
-        binary = numberToBinaryFloat(binary) as string;
+        number = numberToBinaryFloat(number) as string;
         outputString = false;
       }
 
       // check for invalid input
-      validBinary(binary as string);
+      validBinary(number as string);
       if (sign.length !== 1 || !sign.match(/[01]/))
         throw new Error('Invalid sign bit.');
 
-      const answer: string = sign + binary.slice(1);
+      const answer: string = sign + number.slice(1);
       return (outputString ? answer : binaryFloatToNumber(answer)) as T; // just remove the sign and add it
     }
 
     export function setExponent<T extends string | number>(
-      binary: T,
+      number: T,
       exponent: string
     ): T {
       let outputString: boolean = true;
-      if (typeof binary === 'number') {
+      if (typeof number === 'number') {
         // @ts-ignore
-        binary = numberToBinaryFloat(binary) as string;
+        number = numberToBinaryFloat(number) as string;
         outputString = false;
       }
 
       // check for invalid input
-      validBinary(binary as string);
+      validBinary(number as string);
       if (exponent.length !== 11 || !exponent.match(/[01]{11}/))
         throw new Error('Invalid exponent bits.');
 
-      const answer: string = binary[0] + exponent + binary.slice(12);
+      const answer: string = number[0] + exponent + number.slice(12);
       return (outputString ? answer : binaryFloatToNumber(answer)) as T;
     }
 
-    export function setFraction<T extends string | number>(
-      binary: T,
-      fraction: string
+    export function setMantissa<T extends string | number>(
+      number: T,
+      mantissa: string
     ): T {
       let outputString: boolean = true;
-      if (typeof binary === 'number') {
+      if (typeof number === 'number') {
         // @ts-ignore
-        binary = numberToBinaryFloat(binary) as string;
+        number = numberToBinaryFloat(number) as string;
         outputString = false;
       }
 
       // check for invalid input
-      validBinary(binary as string);
-      if (fraction.length !== 52 || !fraction.match(/[01]{52}/))
+      validBinary(number as string);
+      if (mantissa.length !== 52 || !mantissa.match(/[01]{52}/))
         throw new Error('Invalid fraction bits.');
 
-      const answer: string = binary[0] + binary.slice(1, -52) + fraction;
+      const answer: string = number[0] + number.slice(1, -52) + mantissa;
       return (outputString ? answer : binaryFloatToNumber(answer)) as T;
     }
   }
