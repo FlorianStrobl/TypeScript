@@ -142,7 +142,7 @@ export namespace BinaryFloats {
       // check for invalid input
       validBinary(number as string);
       if (mantissa.length !== 52 || !mantissa.match(/[01]{52}/))
-        throw new Error('Invalid fraction bits.');
+        throw new Error('Invalid mantissa bits.');
 
       const answer: string = number[0] + number.slice(1, -52) + mantissa;
       return (outputString ? answer : binaryFloatToNumber(answer)) as T;
