@@ -67,8 +67,6 @@ export function numberParser(number: string): number {
     valid: boolean;
   } = getParts(number, 'pP' + (type === 'hexadecimal' ? '' : 'eE'));
 
-  console.log(parts);
-
   if (!parts.valid || number === '-') throw new Error('Invalid input number.');
 
   const values: {
