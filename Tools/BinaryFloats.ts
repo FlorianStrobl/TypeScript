@@ -23,7 +23,7 @@ export namespace BinaryFloats {
   }
 
   export function binaryFloatToNumber(binary: string): number {
-    if (binary.length !== 64 || !binary.match(/[01]+/g))
+    if (!binary.match(/[01]{64}/g))
       throw new Error(
         'Wrong bit count/input value for a IEEE754 double precision number.'
       );
@@ -51,6 +51,7 @@ export namespace BinaryFloats {
   }
 
   export function numberToBinaryFloat(number: number): string {
+    if (typeof number !== 'number') throw new Error('Invalid input number');
     const buf: ArrayBuffer = new ArrayBuffer(8);
     new Float64Array(buf)[0] = number;
     let ans: string = new BigUint64Array(buf)[0].toString(2); // convert it to binary
@@ -101,8 +102,7 @@ export namespace BinaryFloats {
 
       // check for invalid input
       validBinary(number as string);
-      if (sign.length !== 1 || !sign.match(/[01]/))
-        throw new Error('Invalid sign bit.');
+      if (!sign.match(/^[01]$/)) throw new Error('Invalid sign bit.');
 
       const answer: string = sign + number.slice(1);
       return (outputString ? answer : binaryFloatToNumber(answer)) as T; // just remove the sign and add it
@@ -121,7 +121,7 @@ export namespace BinaryFloats {
 
       // check for invalid input
       validBinary(number as string);
-      if (exponent.length !== 11 || !exponent.match(/[01]{11}/))
+      if (!exponent.match(/^[01]{11}$/))
         throw new Error('Invalid exponent bits.');
 
       const answer: string = number[0] + exponent + number.slice(12);
@@ -141,7 +141,7 @@ export namespace BinaryFloats {
 
       // check for invalid input
       validBinary(number as string);
-      if (mantissa.length !== 52 || !mantissa.match(/[01]{52}/))
+      if (!mantissa.match(/^[01]{52}$/))
         throw new Error('Invalid mantissa bits.');
 
       const answer: string = number[0] + number.slice(1, -52) + mantissa;
