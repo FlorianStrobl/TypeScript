@@ -1,3 +1,5 @@
+// Florian Crafter - Aug. 2021 - 1.0
+
 // number = (prefix) (sign) (integer) (fraction) (exponent)
 // Special values: "Infinity", "-Infinity", "0", "-0", "NaN"
 
