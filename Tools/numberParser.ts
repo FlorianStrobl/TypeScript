@@ -14,6 +14,7 @@
 // "e" and "E" not usable for hexadecimal values
 // () is ment as optional thing
 // you need at least one of the three parts: integer, fraction, exponent
+// binary, octal, hexadecimal and decimal number support
 
 const regxp: { [key: string]: RegExp } = {
   bin: /^(0[bB])[\+-]?[01]*(\.[01]+)?([eEpP][\+-]?\d+)?$/,
