@@ -21,6 +21,26 @@ export namespace BinaryFloats {
 
     return sign + exponent + mantissa;
   }
+  
+  export function BinaryUIntToNumber(bInt: string): number {
+    if (!bInt.match(/[01]+/)) return NaN; // Not a valid number
+
+    // reverse the string for easier use
+    bInt = bInt
+      .split('')
+      .reverse()
+      .join('');
+
+    let ans: number = 0; // the final number
+    for (
+      let i = 0;
+      i < bInt.length;
+      ++i // for each bit
+    )
+      ans += bInt[i] === '0' ? 0 : Math.pow(2, i); // add (bitValue + 2^bitIndex)
+
+    return ans;
+  }
 
   export function binaryFloatToNumber(binary: string): number {
     if (!binary.match(/[01]{64}/g))
