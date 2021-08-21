@@ -1,4 +1,4 @@
-// ClashCrafter#0001 Aug 2021
+// ClashCrafter#0001 - Aug. 2021 - 1.1
 
 export namespace BinaryFloats {
   export function createBinaryFloat(
