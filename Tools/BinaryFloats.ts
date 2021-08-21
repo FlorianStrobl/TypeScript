@@ -168,7 +168,7 @@ export namespace BinaryFloats {
   }
 
   function validBinary(binary: string): void {
-    if (binary.length !== 64 || !binary.match(/[01]+/g))
+    if (!binary.match(/^[01]{64}$/))
       throw new Error(
         'Invalid bit count/input value for a IEEE754 double precision number.'
       );
