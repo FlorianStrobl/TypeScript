@@ -1,4 +1,4 @@
-// Florian Crafter - Aug. 2021 - 1.0a
+// Florian Crafter - Aug. 2021 - 1.0b
 
 // number = (prefix) (sign) (integer) (fraction) (exponent)
 // Special values: "Infinity", "-Infinity", "0", "-0", "NaN"
@@ -234,7 +234,7 @@ function intFracUpdateWithExp(
 
 function uIntStringToNumber(number: string, base: number): number {
   const sign: number = number.startsWith('-') ? -1 : 1;
-  if (number.startsWith('-')) number = number.slice(-1);
+  if (number.startsWith('-')) number = number.slice(1);
 
   if (!number.match(/[0-9a-fA-F]+/)) return NaN;
 
