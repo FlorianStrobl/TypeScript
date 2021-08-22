@@ -1,4 +1,4 @@
-// Florian Crafter - Aug. 2021 - 1.0
+// Florian Crafter - Aug. 2021 - 1.0a
 
 // number = (prefix) (sign) (integer) (fraction) (exponent)
 // Special values: "Infinity", "-Infinity", "0", "-0", "NaN"
@@ -16,7 +16,7 @@
 // "e" and "E" not usable for hexadecimal values
 // () is ment as optional thing
 // you need at least one of the three parts: integer, fraction, exponent
-// binary, octal, hexadecimal and decimal number support
+// Number support: binary, octal, hexadecimal and decimal numbers
 
 const regxp: { [key: string]: RegExp } = {
   bin: /^(0[bB])[\+-]?[01]*(\.[01]+)?([eEpP][\+-]?\d+)?$/,
@@ -25,77 +25,90 @@ const regxp: { [key: string]: RegExp } = {
   dec: /^(0[dD])?[\+-]?(\d)*(\.\d+)?([eEpP][\+-]?\d+)?$/
 };
 
-export function numberParser(number: string): number {
-  number = number.replace(/ /g, () => ''); // replace all spaces
-  number = number.replace(/_/g, () => ''); // remove all "_"
+export function numberParser(
+  number: string,
+  errorInsteadOfNaN: boolean = false
+): number {
+  try {
+    number = number.replace(/ /g, () => ''); // replace all spaces
+    number = number.replace(/_/g, () => ''); // remove all "_"
 
-  // check for default values as +-Inf, +-0, and NaN
-  if (number === 'Infinity') return Number.POSITIVE_INFINITY;
-  else if (number === '+Infinity') return Number.POSITIVE_INFINITY;
-  else if (number === '-Infinity') return Number.NEGATIVE_INFINITY;
-  else if (number === '0') return 0;
-  else if (number === '+0') return 0;
-  else if (number === '-0') return -0;
-  else if (number === 'NaN') return Number.NaN;
+    // check for default values as +-Inf, +-0, and NaN
+    if (number === 'Infinity') return Number.POSITIVE_INFINITY;
+    else if (number === '+Infinity') return Number.POSITIVE_INFINITY;
+    else if (number === '-Infinity') return Number.NEGATIVE_INFINITY;
+    else if (number === '0') return 0;
+    else if (number === '+0') return 0;
+    else if (number === '-0') return -0;
+    else if (number === 'NaN') return Number.NaN;
 
-  if (!number.match(/^[\+-\.0-9a-fA-FdDbBoOxXeEpP]+$/g))
-    throw new Error('Invalid input number.');
+    if (!number.match(/^[\+-\.0-9a-fA-FdDbBoOxXeEpP]+$/g))
+      throw new Error('Invalid input number.');
 
-  // get the type
-  let type: 'binary' | 'octal' | 'hexadecimal' | 'decimal';
-  if (!!number.match(regxp.bin)) type = 'binary';
-  else if (!!number.match(regxp.oct)) type = 'octal';
-  else if (!!number.match(regxp.hex)) type = 'hexadecimal';
-  else if (!!number.match(regxp.dec)) type = 'decimal';
-  else throw new Error('Invalid input number.');
+    // get the type
+    let type: 'binary' | 'octal' | 'hexadecimal' | 'decimal';
+    if (!!number.match(regxp.bin)) type = 'binary';
+    else if (!!number.match(regxp.oct)) type = 'octal';
+    else if (!!number.match(regxp.hex)) type = 'hexadecimal';
+    else if (!!number.match(regxp.dec)) type = 'decimal';
+    else throw new Error('Invalid input number.');
 
-  // get the current base system
-  const bases = { binary: 2, octal: 8, hexadecimal: 16, decimal: 10 };
-  const base: number = bases[type];
+    // get the current base system
+    const bases = { binary: 2, octal: 8, hexadecimal: 16, decimal: 10 };
+    const base: number = bases[type];
 
-  if (
-    number.startsWith('0b') ||
-    number.startsWith('0o') ||
-    number.startsWith('0x') ||
-    number.startsWith('0d')
-  )
-    number = number.slice(2); // remove prefix
+    if (
+      number.startsWith('0b') ||
+      number.startsWith('0o') ||
+      number.startsWith('0x') ||
+      number.startsWith('0d')
+    )
+      number = number.slice(2); // remove prefix
 
-  const parts: {
-    int: string;
-    frac: string;
-    exp: string;
-    sign: number;
-    valid: boolean;
-  } = getParts(number, 'pP' + (type === 'hexadecimal' ? '' : 'eE'));
+    const parts: {
+      int: string;
+      frac: string;
+      exp: string;
+      sign: number;
+      valid: boolean;
+    } = getParts(number, 'pP' + (type === 'hexadecimal' ? '' : 'eE'));
 
-  if (!parts.valid || number === '-') throw new Error('Invalid input number.');
+    if (!parts.valid || number === '-')
+      throw new Error('Invalid input number.');
 
-  const values: {
-    int: string;
-    frac: string;
-  } = intFracUpdateWithExp(
-    parts.int,
-    parts.frac,
-    uIntStringToNumber(parts.exp === '' ? '0' : parts.exp, 10)
-  );
+    const values: {
+      int: string;
+      frac: string;
+    } = intFracUpdateWithExp(
+      parts.int,
+      parts.frac,
+      uIntStringToNumber(parts.exp === '' ? '0' : parts.exp, 10)
+    );
 
-  let finalInt: number = 0; // the final integer part
-  let finalFrac: number = 0; // the final fraction part
+    let finalInt: number = 0; // the final integer part
+    let finalFrac: number = 0; // the final fraction part
 
-  if (values.int !== '') finalInt = uIntStringToNumber(values.int, base); // get the int part
+    if (values.int !== '') finalInt = uIntStringToNumber(values.int, base); // get the int part
 
-  // get the fraction part
-  if (values.frac !== '') {
-    let fracN: number = uIntStringToNumber(values.frac, base);
-    const fracNLength: number = values.frac.toString().length; // TODO toString
+    // get the fraction part
+    if (values.frac !== '') {
+      let fracN: number = uIntStringToNumber(values.frac, base);
+      const fracNLength: number = values.frac.toString().length; // TODO toString
 
-    for (let i = 0; i < fracNLength; ++i) fracN /= base; // shift the value to the right point place
+      for (let i = 0; i < fracNLength; ++i) fracN /= base; // shift the value to the right point place
 
-    finalFrac = fracN; // add the frac part to the int part
+      finalFrac = fracN; // add the frac part to the int part
+    }
+
+    return (finalInt + finalFrac) * parts.sign; // return the value with the correct sign
+  } catch (e) {
+    if (errorInsteadOfNaN) {
+      throw new Error(e);
+    } else {
+      console.log('Error', e);
+      return NaN;
+    }
   }
-
-  return (finalInt + finalFrac) * parts.sign; // return the value with the correct sign
 }
 
 // extract the parts of a string number
