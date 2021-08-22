@@ -102,9 +102,8 @@ export function numberParser(
 
     return (finalInt + finalFrac) * parts.sign; // return the value with the correct sign
   } catch (e) {
-    if (errorInsteadOfNaN) {
-      throw new Error(e);
-    } else {
+    if (errorInsteadOfNaN) throw new Error(e);
+    else {
       console.log('Error', e);
       return NaN;
     }
