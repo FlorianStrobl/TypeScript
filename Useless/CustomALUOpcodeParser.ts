@@ -1,4 +1,5 @@
-// My own ALU parser
+// You give the function ALU() an input like "5 + 5" and it will return you the OP code for an ALU I build
+// This is for everyone besides me useless because I'm the only one who has this very specific ALU with these OP Codes...
 
 const operations = {
   '': '0000',
