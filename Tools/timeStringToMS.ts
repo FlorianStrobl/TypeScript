@@ -1,4 +1,4 @@
-// Florian Strobl - ClashCrafter#0001 - June 2021 - Version 1.1b
+// Florian Strobl - ClashCrafter#0001 - June 2021 - Version 1.1.2
 
 // strings have to be in a special format: number (can have "." or "," for decimal places) unit (units are defined below)
 // you can have as many of these string parts as you want
@@ -39,6 +39,7 @@ const timeUnitValues: { [index: string]: number } = {
   dec: 1000 * 60 * 60 * 24 * 365 * 10,
   cen: 1000 * 60 * 60 * 24 * 365 * 100
 };
+
 
 export function timeStringToMS(timeStr: string): number | undefined {
   // get values

@@ -1,4 +1,4 @@
-// Florian Strobl - ClashCrafter#0001 - June 2021 - Version 1.3
+// Florian Strobl - ClashCrafter#0001 - June 2021 - Version 1.3.0
 
 // msToTimeString(330000);                          // "5m 30s"
 // msToTimeString(330000, 'short', false, ' ', 15); //  "5m 30s"

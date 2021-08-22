@@ -1,4 +1,4 @@
-// Florian Strobl - ClashCrafter#0001 - Aug. 2021 - 1.0b
+// Florian Strobl - ClashCrafter#0001 - Aug. 2021 - 1.0.2
 
 // number = (prefix) (sign) (integer) (fraction) (exponent)
 // Special values: "Infinity", "-Infinity", "0", "-0", "NaN"

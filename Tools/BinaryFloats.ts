@@ -1,4 +1,4 @@
-// Florian Strobl - ClashCrafter#0001 - Aug. 2021 - 1.1
+// Florian Strobl - ClashCrafter#0001 - Aug. 2021 - 1.1.0
 
 export namespace BinaryFloats {
   export function createBinaryFloat(
