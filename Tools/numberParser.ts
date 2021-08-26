@@ -130,13 +130,16 @@ export namespace NumberParser {
     else if (Object.is(number, -0)) return '-0';
     else if (number === 0) return '0';
 
-    const sign: number = BinaryNumbers.Floats.IEEE754Bits.GetBits.getSign(number) === '0' ? 1 : -1;
+    const sign: number =
+      BinaryNumbers.Floats.IEEE754Bits.GetBits.getSign(number) === '0' ? 1 : -1;
 
-    const _exponent: string = BinaryNumbers.Floats.IEEE754Bits.GetBits.getExponent(number);
+    const _exponent: string =
+      BinaryNumbers.Floats.IEEE754Bits.GetBits.getExponent(number);
     let exponent: number = stringToNumberParser('0b' + _exponent) - 1023;
     if (exponent === -1023) exponent = -1022; // denormals
 
-    let mantissa: string = BinaryNumbers.Floats.IEEE754Bits.GetBits.getMantissa(number);
+    let mantissa: string =
+      BinaryNumbers.Floats.IEEE754Bits.GetBits.getMantissa(number);
 
     if (exponent === 0) {
       // no shift, just add the leading one

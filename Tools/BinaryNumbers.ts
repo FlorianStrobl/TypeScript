@@ -1,5 +1,7 @@
 // Florian Strobl - ClashCrafter#0001 - Aug. 2021 - 2.0.0
 
+import { StringManipulation } from './StringManipulation';
+
 export namespace BinaryNumbers {
   export namespace Integer {
     export function uIntToBinaryString(unsignedInteger: number): string {
@@ -13,19 +15,20 @@ export namespace BinaryNumbers {
             unsignedInteger
         );
 
-      let ans: number[] = [];
-
+      let powers: number[] = [];
       // from the maximum binary bit to the minimum for integers
-      for (let i = 1023; i >= 0; --i) {
+      for (let i = 1023; i >= 0; --i)
         if (unsignedInteger - Math.pow(2, i) >= 0) {
           unsignedInteger -= Math.pow(2, i);
-          ans.push(i);
+          powers.push(i);
         }
-      }
 
-      console.log(ans);
+      // the biggest number chooses the zero count
+      let answer: string = StringManipulation.repeat('0', powers[0]);
+      for (const index of powers) // add the ones
+        answer = StringManipulation.replaceAt(answer, '1', powers[0] - index);
 
-      return '';
+      return answer;
     }
 
     export function binaryStringToUInt(binaryString: string): number {
@@ -34,7 +37,8 @@ export namespace BinaryNumbers {
       let number: number = 0;
       for (let i = 0; i < binaryString.length; ++i)
         if (binaryString[i] === '1')
-          number += Math.pow(2, binaryString.length - (i + 1)); // add (bitValue + 2^bitIndex), to each position
+          // add (bitValue + 2^bitIndex), to each position
+          number += Math.pow(2, binaryString.length - (i + 1));
 
       return number;
     }
@@ -44,6 +48,10 @@ export namespace BinaryNumbers {
     }
 
     export function binaryStringToSInt(binaryString: string): number {
+      if (!validIntBinary(binaryString)) return NaN; // Not a valid number
+
+      // code
+
       return 0;
     }
 
@@ -253,20 +261,6 @@ export namespace BinaryNumbers {
       }
     }
   }
-
-  namespace Internal {
-    export namespace StringManipulation {
-      export function replaceAt(string: string, char: string, index: number) {}
-    }
-
-    export function insertAt(
-      string: string,
-      char: string,
-      index: number
-    ): string {
-      return string.substring(0, index) + char + string.substring(index);
-    }
-  }
 }
 
-console.log(BinaryNumbers.Integer.uIntToBinaryString(Number.MAX_VALUE));
+console.log(BinaryNumbers.Integer.uIntToBinaryString(13));
