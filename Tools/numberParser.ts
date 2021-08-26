@@ -20,13 +20,15 @@
 
 import { BinaryFloats } from './BinaryFloats';
 
-namespace NumberParser {
+export namespace NumberParser {
   const regxp: { [key: string]: RegExp } = {
     bin: /^(0[bB])[\+-]?[01]*(\.[01]+)?([eEpP][\+-]?\d+)?$/,
     oct: /^(0[oO])[\+-]?[0-7]*(\.[0-7]+)?([eEpP][\+-]?\d+)?$/,
     hex: /^(0[xX])[\+-]?[0-9a-fA-F]*(\.[0-9a-fA-F]+)?([pP][\+-]?\d+)?$/,
     dec: /^(0[dD])?[\+-]?(\d)*(\.\d+)?([eEpP][\+-]?\d+)?$/,
   };
+
+  console.log('parsed number', stringToNumberParser('.5e+1'));
 
   export function stringToNumberParser(
     number: string,
@@ -38,16 +40,19 @@ namespace NumberParser {
 
       // check for default values as +-Inf, +-0, and NaN
       if (number === 'Infinity') return Number.POSITIVE_INFINITY;
+      else if (number === 'infinity') return Number.POSITIVE_INFINITY;
       else if (number === '+Infinity') return Number.POSITIVE_INFINITY;
+      else if (number === '+infinity') return Number.POSITIVE_INFINITY;
       else if (number === '-Infinity') return Number.NEGATIVE_INFINITY;
+      else if (number === '-infinity') return Number.POSITIVE_INFINITY;
       else if (number === '0') return 0;
       else if (number === '+0') return 0;
       else if (number === '-0') return -0;
       else if (number === 'NaN') return Number.NaN;
+      else if (number === 'nan') return Number.NaN;
 
       if (!number.match(/^[\+-\.0-9a-fA-FdDbBoOxXeEpP]+$/g))
         throw new Error('Invalid input number.');
-
       // get the type
       let type: 'binary' | 'octal' | 'hexadecimal' | 'decimal';
       if (!!number.match(regxp.bin)) type = 'binary';
@@ -110,14 +115,26 @@ namespace NumberParser {
     }
   }
 
-  numberToStringParser(4);
-
   export function numberToStringParser(
     number: number,
     base: 'dec' | 'bin' | 'oct' | 'hex' = 'dec',
     mode: 'normalized' | 'exp' | 'no exp' = 'no exp'
-  ) {
+  ): string {
+    if (typeof number !== 'number') throw new Error('Invalid input.');
+
+    if (Number.isNaN(number)) return 'NaN';
+    else if (number === Infinity) return 'Infinity';
+    else if (number === -Infinity) return '-Infinity';
+    else if (Object.is(number, -0)) return '-0';
+    else if (number === 0) return '0';
+
+    const sign: string = BinaryFloats.GetBits.getSign(number);
+    const exponent: string = BinaryFloats.GetBits.getExponent(number);
+    const mantissa: string = BinaryFloats.GetBits.getMantissa(number);
+
     let trunced: number = Math.trunc(number);
+
+    return 'float';
   }
 
   // extract the parts of a string number
@@ -164,10 +181,8 @@ namespace NumberParser {
     let _exp: string = removeLeadingZerosWMinus(exps);
 
     return {
-      int: StringManipulation.removeLeadingZeros(
-        StringManipulation.removeLeadingSign(ints)
-      ),
-      frac: StringManipulation.removeTrailingZeros(fracs),
+      int: removeLeadingZeros(removeLeadingSign(ints)),
+      frac: removeTrailingZeros(fracs),
       exp: _exp === '-' ? '' : _exp,
       sign: ints.startsWith('-') ? -1 : 1,
       valid: ints !== '' || fracs !== '',
@@ -176,9 +191,9 @@ namespace NumberParser {
     function removeLeadingZerosWMinus(str: string): string {
       let minus: string = '';
       if (str.startsWith('-')) minus = '-';
-      str = StringManipulation.removeLeadingSign(str);
+      str = removeLeadingSign(str);
 
-      return minus + StringManipulation.removeLeadingZeros(str); // return sign + str without zeros
+      return minus + removeLeadingZeros(str); // return sign + str without zeros
     }
   }
 
@@ -190,8 +205,8 @@ namespace NumberParser {
   ): { int: string; frac: string } {
     // shift int and frac with the exponent
 
-    integerPart = StringManipulation.removeLeadingZeros(integerPart);
-    fractionPart = StringManipulation.removeTrailingZeros(fractionPart);
+    integerPart = removeLeadingZeros(integerPart);
+    fractionPart = removeTrailingZeros(fractionPart);
 
     // only if exponent is set
     if (exponentPart !== 0)
@@ -239,8 +254,8 @@ namespace NumberParser {
       }
 
     return {
-      int: StringManipulation.removeLeadingZeros(integerPart),
-      frac: StringManipulation.removeTrailingZeros(fractionPart),
+      int: removeLeadingZeros(integerPart),
+      frac: removeTrailingZeros(fractionPart),
     };
   }
 
@@ -251,10 +266,7 @@ namespace NumberParser {
     if (!number.match(/[0-9a-fA-F]+/)) return NaN;
 
     // reverse the string for easier use
-    number = StringManipulation.removeLeadingZeros(number)
-      .split('')
-      .reverse()
-      .join('');
+    number = removeLeadingZeros(number).split('').reverse().join('');
 
     let ans: number = 0;
     for (let i = 0; i < number.length; ++i)
@@ -314,21 +326,20 @@ namespace NumberParser {
     }
   }
 
-  namespace StringManipulation {
-    export function removeLeadingSign(str: string): string {
-      if (str.startsWith('-') || str.startsWith('+')) return str.slice(1);
-      else return str;
-    }
+  function removeLeadingSign(string: string): string {
+    if (string.startsWith('-') || string.startsWith('+'))
+      return string.slice(1);
+    else return string;
+  }
 
-    export function removeLeadingZeros(string: string): string {
-      while (string.startsWith('0')) string = string.slice(1);
-      return string;
-    }
+  function removeLeadingZeros(string: string): string {
+    while (string.startsWith('0')) string = string.slice(1);
+    return string;
+  }
 
-    export function removeTrailingZeros(string: string): string {
-      while (string.endsWith('0')) string = string.slice(0, -1);
-      return string;
-    }
+  function removeTrailingZeros(string: string): string {
+    while (string.endsWith('0')) string = string.slice(0, -1);
+    return string;
   }
 
   function generateRandomNumberString(digitsInTotal: number = 10): string {
