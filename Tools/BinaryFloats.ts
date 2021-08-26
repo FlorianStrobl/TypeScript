@@ -1,35 +1,18 @@
 // Florian Strobl - ClashCrafter#0001 - Aug. 2021 - 1.1.0
 
 export namespace BinaryFloats {
-  export function createBinaryFloat(
-    sign: string = '0',
-    exponent: string = '00000000000',
-    mantissa: string = '0000000000000000000000000000000000000000000000000000'
-  ): string {
-    if (sign.length === 0) sign = '0';
-    while (exponent.length < 11) exponent = '0' + exponent;
-    while (mantissa.length < 52) mantissa += '0';
-
-    if (
-      !sign.match(/[01]{1}/g) ||
-      !exponent.match(/[01]{11}/g) ||
-      !mantissa.match(/[01]{52}/g)
-    )
+  export function validBinary(binary: string): void {
+    if (!binary.match(/^[01]{64}$/))
       throw new Error(
-        'Wrong bit count/input value for a IEEE754 double precision number.'
+        'Invalid bit count/input value for a IEEE754 double precision number.'
       );
-
-    return sign + exponent + mantissa;
   }
-  
+
   export function BinaryUIntToNumber(bInt: string): number {
     if (!bInt.match(/[01]+/)) return NaN; // Not a valid number
 
     // reverse the string for easier use
-    bInt = bInt
-      .split('')
-      .reverse()
-      .join('');
+    bInt = bInt.split('').reverse().join('');
 
     let ans: number = 0; // the final number
     for (
@@ -39,6 +22,15 @@ export namespace BinaryFloats {
     )
       ans += bInt[i] === '0' ? 0 : Math.pow(2, i); // add (bitValue + 2^bitIndex)
 
+    return ans;
+  }
+
+  export function numberToBinaryFloat(number: number): string {
+    if (typeof number !== 'number') throw new Error('Invalid input number');
+    const buf: ArrayBuffer = new ArrayBuffer(8);
+    new Float64Array(buf)[0] = number;
+    let ans: string = new BigUint64Array(buf)[0].toString(2); // convert it to binary
+    while (ans.length < 64) ans = '0' + ans; // fill the start with leading zeros
     return ans;
   }
 
@@ -70,13 +62,25 @@ export namespace BinaryFloats {
     }
   }
 
-  export function numberToBinaryFloat(number: number): string {
-    if (typeof number !== 'number') throw new Error('Invalid input number');
-    const buf: ArrayBuffer = new ArrayBuffer(8);
-    new Float64Array(buf)[0] = number;
-    let ans: string = new BigUint64Array(buf)[0].toString(2); // convert it to binary
-    while (ans.length < 64) ans = '0' + ans; // fill the start with leading zeros
-    return ans;
+  export function createBinaryFloat(
+    sign: string = '0',
+    exponent: string = '00000000000',
+    mantissa: string = '0000000000000000000000000000000000000000000000000000'
+  ): string {
+    if (sign.length === 0) sign = '0';
+    while (exponent.length < 11) exponent = '0' + exponent;
+    while (mantissa.length < 52) mantissa += '0';
+
+    if (
+      !sign.match(/[01]{1}/g) ||
+      !exponent.match(/[01]{11}/g) ||
+      !mantissa.match(/[01]{52}/g)
+    )
+      throw new Error(
+        'Wrong bit count/input value for a IEEE754 double precision number.'
+      );
+
+    return sign + exponent + mantissa;
   }
 
   export namespace GetBits {
@@ -185,12 +189,5 @@ export namespace BinaryFloats {
     // has many other forms too
     export const NaN: string =
       '0111111111111000000000000000000000000000000000000000000000000000';
-  }
-
-  function validBinary(binary: string): void {
-    if (!binary.match(/^[01]{64}$/))
-      throw new Error(
-        'Invalid bit count/input value for a IEEE754 double precision number.'
-      );
   }
 }
