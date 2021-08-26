@@ -18,7 +18,7 @@
 // you need at least one of the three parts: integer, fraction, exponent
 // Number support: binary, octal, hexadecimal and decimal numbers
 
-import { BinaryFloats } from './BinaryFloats';
+import { BinaryNumbers } from './BinaryNumbers';
 
 export namespace NumberParser {
   const regxp: { [key: string]: RegExp } = {
@@ -123,19 +123,20 @@ export namespace NumberParser {
   ): string {
     if (typeof number !== 'number') throw new Error('Invalid input.');
 
+    // special values
     if (Number.isNaN(number)) return 'NaN';
     else if (number === Infinity) return 'Infinity';
     else if (number === -Infinity) return '-Infinity';
     else if (Object.is(number, -0)) return '-0';
     else if (number === 0) return '0';
 
-    const sign: number = BinaryFloats.GetBits.getSign(number) === '0' ? 1 : -1;
+    const sign: number = BinaryNumbers.Floats.IEEE754Bits.GetBits.getSign(number) === '0' ? 1 : -1;
 
-    const _exponent: string = BinaryFloats.GetBits.getExponent(number);
+    const _exponent: string = BinaryNumbers.Floats.IEEE754Bits.GetBits.getExponent(number);
     let exponent: number = stringToNumberParser('0b' + _exponent) - 1023;
-    if (exponent === -1023) exponent = -1022;
+    if (exponent === -1023) exponent = -1022; // denormals
 
-    let mantissa: string = BinaryFloats.GetBits.getMantissa(number);
+    let mantissa: string = BinaryNumbers.Floats.IEEE754Bits.GetBits.getMantissa(number);
 
     if (exponent === 0) {
       // no shift, just add the leading one
