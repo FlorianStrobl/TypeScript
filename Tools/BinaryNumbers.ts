@@ -43,16 +43,46 @@ export namespace BinaryNumbers {
       return number;
     }
 
-    export function sIntToBinaryString(signedInteger: number): string {
+    export function sIntToBinaryString(
+      signedInteger: number,
+      bitCount: number | undefined = undefined
+    ): string {
       return '';
     }
 
-    export function binaryStringToSInt(binaryString: string): number {
+    export function binaryStringToSInt(
+      binaryString: string,
+      bitCount: number | undefined = undefined
+    ): number {
       if (!validIntBinary(binaryString)) return NaN; // Not a valid number
 
-      // code
+      // TODO bitCount
 
-      return 0;
+      const sign: number = binaryString[0] === '0' ? 1 : -1;
+
+      if (bitCount === undefined)
+        if (binaryString[0] === '0')
+          // get the sign bit
+          return binaryStringToUInt(binaryString);
+        else {
+          binaryString = StringManipulation.slice(binaryString, 1); // remove the sign bit
+
+          // subtract one
+          binaryString = (Number.parseInt(binaryString, 2) - 1).toString(2); // TODO
+
+          // invert/flip each bit
+          for (let i = 0; i < binaryString.length; ++i) {
+            let val: string = '';
+            if (binaryString[i] === '0') val = '1';
+            else val = '0';
+
+            // replace the 0s with 1s and the 1s with 0s
+            binaryString = StringManipulation.replaceAt(binaryString, val, i);
+          }
+
+          return binaryStringToUInt(binaryString) * sign;
+        }
+      else return 0;
     }
 
     export function validIntBinary(binary: string): boolean {
@@ -263,4 +293,4 @@ export namespace BinaryNumbers {
   }
 }
 
-console.log(BinaryNumbers.Integer.uIntToBinaryString(13));
+console.log(BinaryNumbers.Integer.binaryStringToSInt('0000'));
