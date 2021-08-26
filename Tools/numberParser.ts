@@ -102,7 +102,7 @@ export namespace NumberParser {
       // get the fraction part
       if (values.frac !== '') {
         let fracN: number = uIntStringToNumber(values.frac, base);
-        const fracNLength: number = values.frac.toString().length; // TODO toString
+        const fracNLength: number = values.frac.length;
 
         for (let i = 0; i < fracNLength; ++i) fracN /= base; // shift the value to the right point place
 
@@ -129,11 +129,32 @@ export namespace NumberParser {
     else if (Object.is(number, -0)) return '-0';
     else if (number === 0) return '0';
 
-    const sign: string = BinaryFloats.GetBits.getSign(number);
-    const exponent: string = BinaryFloats.GetBits.getExponent(number);
-    const mantissa: string = BinaryFloats.GetBits.getMantissa(number);
+    const sign: number = BinaryFloats.GetBits.getSign(number) === '0' ? 1 : -1;
 
-    let trunced: number = Math.trunc(number);
+    const _exponent: string = BinaryFloats.GetBits.getExponent(number);
+    let exponent: number = stringToNumberParser('0b' + _exponent) - 1023;
+    if (exponent === -1023) exponent = -1022;
+
+    let mantissa: string = BinaryFloats.GetBits.getMantissa(number);
+
+    if (exponent === 0) {
+      // no shift, just add the leading one
+      mantissa = '1.' + mantissa;
+    } else if (exponent < 0) {
+      // shift to the right
+      let leadingTrailingZeros: string = '0'.repeat(Math.abs(exponent) - 1);
+      // check for denormal
+      if (exponent === -1023) mantissa = '0.' + leadingTrailingZeros + mantissa;
+      else mantissa = '0.' + leadingTrailingZeros + '1' + mantissa;
+    } else {
+      // shift to the left
+      let leadingTrailingZeros: string = '0'.repeat(exponent - 1);
+      mantissa = '1' + mantissa + leadingTrailingZeros;
+      mantissa = insertAt(mantissa, '.', exponent + 1); // add komma
+      mantissa = removeTrailingZeros(mantissa) + '0'; // add trailing zero
+    }
+
+    // let trunced: number = Math.trunc(number);
 
     return 'float';
   }
@@ -343,6 +364,10 @@ export namespace NumberParser {
     return string;
   }
 
+  function insertAt(string: string, char: string, index: number): string {
+    return string.substring(0, index) + char + string.substring(index);
+  }
+
   function generateRandomNumberString(digitsInTotal: number = 10): string {
     let randomNum: string = '0d';
 
@@ -355,8 +380,7 @@ export namespace NumberParser {
 
     // set komma
     let index = Math.floor(Math.random() * (digitsInTotal - 3)) + 3;
-    randomNum =
-      randomNum.substring(0, index) + '.' + randomNum.substring(index + 1);
+    randomNum = insertAt(randomNum, '.', index);
 
     return randomNum;
   }
