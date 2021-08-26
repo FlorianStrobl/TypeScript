@@ -1,4 +1,4 @@
-// Florian Strobl - ClashCrafter#0001 - Aug. 2021 - 1.0.2
+// Florian Crafter - Aug. 2021 - 1.0b
 
 // number = (prefix) (sign) (integer) (fraction) (exponent)
 // Special values: "Infinity", "-Infinity", "0", "-0", "NaN"
@@ -22,10 +22,10 @@ const regxp: { [key: string]: RegExp } = {
   bin: /^(0[bB])[\+-]?[01]*(\.[01]+)?([eEpP][\+-]?\d+)?$/,
   oct: /^(0[oO])[\+-]?[0-7]*(\.[0-7]+)?([eEpP][\+-]?\d+)?$/,
   hex: /^(0[xX])[\+-]?[0-9a-fA-F]*(\.[0-9a-fA-F]+)?([pP][\+-]?\d+)?$/,
-  dec: /^(0[dD])?[\+-]?(\d)*(\.\d+)?([eEpP][\+-]?\d+)?$/
+  dec: /^(0[dD])?[\+-]?(\d)*(\.\d+)?([eEpP][\+-]?\d+)?$/,
 };
 
-export function numberParser(
+export function stringToNumberParser(
   number: string,
   errorInsteadOfNaN: boolean = false
 ): number {
@@ -107,6 +107,13 @@ export function numberParser(
   }
 }
 
+export function numberToStringParser(
+  number: number,
+  mode: 'dec' | 'bin' | 'oct' | 'hex' = 'dec'
+) {
+  return Math.trunc(number);
+}
+
 // extract the parts of a string number
 function getParts(
   num: string,
@@ -151,19 +158,21 @@ function getParts(
   let _exp: string = removeLeadingZerosWMinus(exps);
 
   return {
-    int: removeLeadingZeros(removeLeadingSign(ints)),
-    frac: removeTrailingZeros(fracs),
+    int: StringManipulation.removeLeadingZeros(
+      StringManipulation.removeLeadingSign(ints)
+    ),
+    frac: StringManipulation.removeTrailingZeros(fracs),
     exp: _exp === '-' ? '' : _exp,
     sign: ints.startsWith('-') ? -1 : 1,
-    valid: ints !== '' || fracs !== ''
+    valid: ints !== '' || fracs !== '',
   };
 
   function removeLeadingZerosWMinus(str: string): string {
     let minus: string = '';
     if (str.startsWith('-')) minus = '-';
-    str = removeLeadingSign(str);
+    str = StringManipulation.removeLeadingSign(str);
 
-    return minus + removeLeadingZeros(str); // return sign + str without zeros
+    return minus + StringManipulation.removeLeadingZeros(str); // return sign + str without zeros
   }
 }
 
@@ -175,8 +184,8 @@ function intFracUpdateWithExp(
 ): { int: string; frac: string } {
   // shift int and frac with the exponent
 
-  integerPart = removeLeadingZeros(integerPart);
-  fractionPart = removeTrailingZeros(fractionPart);
+  integerPart = StringManipulation.removeLeadingZeros(integerPart);
+  fractionPart = StringManipulation.removeTrailingZeros(fractionPart);
 
   // only if exponent is set
   if (exponentPart !== 0)
@@ -224,8 +233,8 @@ function intFracUpdateWithExp(
     }
 
   return {
-    int: removeLeadingZeros(integerPart),
-    frac: removeTrailingZeros(fractionPart)
+    int: StringManipulation.removeLeadingZeros(integerPart),
+    frac: StringManipulation.removeTrailingZeros(fractionPart),
   };
 }
 
@@ -236,7 +245,7 @@ function uIntStringToNumber(number: string, base: number): number {
   if (!number.match(/[0-9a-fA-F]+/)) return NaN;
 
   // reverse the string for easier use
-  number = removeLeadingZeros(number)
+  number = StringManipulation.removeLeadingZeros(number)
     .split('')
     .reverse()
     .join('');
@@ -299,17 +308,37 @@ function uIntStringToNumber(number: string, base: number): number {
   }
 }
 
-function removeLeadingZeros(string: string): string {
-  while (string.startsWith('0')) string = string.slice(1);
-  return string;
+namespace StringManipulation {
+  export function removeLeadingSign(str: string): string {
+    if (str.startsWith('-') || str.startsWith('+')) return str.slice(1);
+    else return str;
+  }
+
+  export function removeLeadingZeros(string: string): string {
+    while (string.startsWith('0')) string = string.slice(1);
+    return string;
+  }
+
+  export function removeTrailingZeros(string: string): string {
+    while (string.endsWith('0')) string = string.slice(0, -1);
+    return string;
+  }
 }
 
-function removeTrailingZeros(string: string): string {
-  while (string.endsWith('0')) string = string.slice(0, -1);
-  return string;
-}
+function generateRandomNumberString(digitsInTotal: number = 10): string {
+  let randomNum: string = '0d';
 
-function removeLeadingSign(str: string): string {
-  if (str.startsWith('-') || str.startsWith('+')) return str.slice(1);
-  else return str;
+  // sign
+  Math.random() < 0.5 ? (randomNum += '+') : (randomNum += '-');
+
+  // digits
+  for (let i = 0; i < digitsInTotal; ++i)
+    randomNum += Math.floor(Math.random() * 10).toString();
+
+  // set komma
+  let index = Math.floor(Math.random() * (digitsInTotal - 3)) + 3;
+  randomNum =
+    randomNum.substring(0, index) + '.' + randomNum.substring(index + 1);
+
+  return randomNum;
 }
