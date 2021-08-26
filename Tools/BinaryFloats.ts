@@ -1,4 +1,4 @@
-// Florian Strobl - ClashCrafter#0001 - Aug. 2021 - 1.1.0
+// Florian Strobl - ClashCrafter#0001 - Aug. 2021 - 1.1.1
 
 export namespace BinaryFloats {
   export function validBinary(binary: string): void {
