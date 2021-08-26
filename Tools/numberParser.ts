@@ -28,7 +28,8 @@ export namespace NumberParser {
     dec: /^(0[dD])?[\+-]?(\d)*(\.\d+)?([eEpP][\+-]?\d+)?$/,
   };
 
-  console.log('parsed number', stringToNumberParser('.5e+1'));
+  //console.log('parsed number', stringToNumberParser('.5e+1'));
+  console.log(numberToStringParser(5));
 
   export function stringToNumberParser(
     number: string,
