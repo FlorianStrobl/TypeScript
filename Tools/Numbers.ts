@@ -264,7 +264,76 @@ export namespace BinaryNumbers {
       signedInteger: number,
       bitCount: number | undefined = undefined
     ): string {
-      return '';
+      if (
+        !Number.isFinite(signedInteger) ||
+        signedInteger !== Math.trunc(signedInteger)
+      )
+        throw new Error(
+          'Invalid input. Input has to be an integer. Your input was: ' +
+            signedInteger
+        );
+
+      if (signedInteger > 0) {
+        let ans: string = uIntToBinaryString(signedInteger);
+        if (bitCount !== undefined) {
+          if (bitCount < ans.length)
+            throw new Error(
+              'Result was too big. Maximum bit count: ' +
+                bitCount +
+                '. Actuall value: ' +
+                ans
+            );
+
+          if (bitCount !== ans.length)
+            while (ans.length < bitCount) ans = '0' + ans;
+
+          return ans;
+        } else return ans;
+      } else {
+        signedInteger = Math.abs(signedInteger); // get the absoulte value
+        let unsignedIntegerV: string = uIntToBinaryString(signedInteger); // get it's unsgn value
+
+        if (bitCount !== undefined) {
+          if (bitCount < unsignedIntegerV.length)
+            throw new Error(
+              'Result was too big. Maximum bit count: ' +
+                bitCount +
+                '. Actuall value: ' +
+                unsignedIntegerV
+            );
+
+          if (bitCount !== unsignedIntegerV.length)
+            while (unsignedIntegerV.length < bitCount)
+              unsignedIntegerV = '0' + unsignedIntegerV;
+        }
+
+        console.log('original', unsignedIntegerV);
+
+        // invert/flip each bit
+        for (let i = 0; i < unsignedIntegerV.length; ++i) {
+          let val: string = '0';
+          if (unsignedIntegerV[i] === '0') val = '1';
+
+          // replace the 0s with 1s and the 1s with 0s
+          unsignedIntegerV = StringManipulation.replaceAt(
+            unsignedIntegerV,
+            val,
+            i
+          );
+        }
+
+        console.log('fliped', unsignedIntegerV);
+
+        // add one
+        const dec: number = NumberParser.stringToNumberParser(
+          '0b' + unsignedIntegerV
+        );
+        unsignedIntegerV = NumberParser.numberToStringParser(dec + 1, 'bin');
+        // TODO check if works
+        console.log('added one', unsignedIntegerV);
+
+        return unsignedIntegerV;
+      }
     }
 
     export function binaryStringToSInt(
@@ -276,7 +345,7 @@ export namespace BinaryNumbers {
       // bit count
       let signBitIndex: number = binaryString.length;
       if (bitCount !== undefined) {
-        if (bitCount > signBitIndex)
+        if (bitCount < signBitIndex)
           throw new Error(
             'Invalid input. Your bit count was set to: ' +
               bitCount +
@@ -286,6 +355,9 @@ export namespace BinaryNumbers {
           );
         signBitIndex = bitCount;
       }
+
+      while (binaryString.length < signBitIndex)
+        binaryString = '0' + binaryString;
 
       // get the sign bit
       let sign: number = 1;
@@ -306,14 +378,13 @@ export namespace BinaryNumbers {
           binaryString = StringManipulation.replaceAt(binaryString, val, i);
         }
 
+        // add one
         const dec: number = NumberParser.stringToNumberParser(
           '0b' + binaryString
         );
+        binaryString = NumberParser.numberToStringParser(dec + 1, 'bin');
 
-        // add one
-        binaryString = (dec + 1).toString(2); // TODO change with right parser
-
-        //binaryString = StringManipulation.slice(binaryString, 1);
+        // leading zeros
         while (binaryString.length < signBitIndex - 1)
           binaryString = '0' + binaryString;
 
@@ -697,11 +768,13 @@ export namespace NumberParser {
 //console.log('parsed number', stringToNumberParser('.5e+1'));
 //console.log(numberToStringParser(5));
 
-console.log(BinaryNumbers.Integer.binaryStringToSInt('0000', 4));
-console.log(BinaryNumbers.Integer.binaryStringToSInt('0001', 4));
-console.log(BinaryNumbers.Integer.binaryStringToSInt('0111', 4));
+/*
+console.log(BinaryNumbers.Integer.sIntToBinaryString(0, 5));
+console.log(BinaryNumbers.Integer.sIntToBinaryString(1, 5));
+console.log(BinaryNumbers.Integer.sIntToBinaryString(7, 4));
 
-console.log(BinaryNumbers.Integer.binaryStringToSInt('1000', 4));
-console.log(BinaryNumbers.Integer.binaryStringToSInt('1111', 4));
-console.log(BinaryNumbers.Integer.binaryStringToSInt('1001', 4));
-console.log(BinaryNumbers.Integer.binaryStringToSInt('1010', 4));
+console.log(BinaryNumbers.Integer.sIntToBinaryString(-8, 5));
+console.log(BinaryNumbers.Integer.sIntToBinaryString(-1, 4));
+console.log(BinaryNumbers.Integer.sIntToBinaryString(-7, 5));
+console.log(BinaryNumbers.Integer.sIntToBinaryString(-6, 4));
+*/
