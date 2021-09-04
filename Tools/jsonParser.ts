@@ -843,5 +843,3 @@ export function stringNumberToNumber(
   }
 }
 // #endregion
-
-// console.log('test');
