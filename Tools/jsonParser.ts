@@ -14,16 +14,19 @@ type JsonObject = {
 const isJsonWhitespace: RegExp = /[ \t\n\r]*/;
 const isJsonNullRegex: RegExp = /^null$/;
 const isJsonBoolRegex: RegExp = /^(true|false)$/;
-const isJsonStringRegex: RegExp = /^"(\\"|\\\\|\\\/|\\b|\\f|\\n|\\r|\\t|\\[0-9a-fA-F]{4}|[^"\\])*?"$/;
-const isJsonNumberRegex: RegExp = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][\+-]?\d+)?$/;
+const isJsonStringRegex: RegExp =
+  /^"(\\"|\\\\|\\\/|\\b|\\f|\\n|\\r|\\t|\\[0-9a-fA-F]{4}|[^"\\])*?"$/;
+const isJsonNumberRegex: RegExp =
+  /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][\+-]?\d+)?$/;
 // TODO
-const isJsonArray: RegExp = /\[(([ \t\n\r]*)|((-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][\+-]?\d+)?)|null|true|false))\]/;
+const isJsonArray: RegExp =
+  /\[(([ \t\n\r]*)|((-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][\+-]?\d+)?)|null|true|false))\]/;
 
 export namespace Json {
   export enum FormatMode {
     AddSpacesSimple,
     AddSpacesAdvanced,
-    RemoveSpaces
+    RemoveSpaces,
   }
 
   export function stringify(x: Json): string {
@@ -672,9 +675,7 @@ export function stringNumberToNumber(
   }
 
   // extract the parts of a string number
-  function getParts(
-    num: string
-  ): {
+  function getParts(num: string): {
     int: string;
     frac: string;
     exp: string;
@@ -714,7 +715,7 @@ export function stringNumberToNumber(
       frac: removeTrailingZeros(fracs),
       exp: _exp === '-' ? '' : _exp,
       sign: ints.startsWith('-') ? -1 : 1,
-      valid: ints !== '' || fracs !== ''
+      valid: ints !== '' || fracs !== '',
     };
 
     function removeLeadingZerosWMinus(str: string): string {
@@ -781,7 +782,7 @@ export function stringNumberToNumber(
 
     return {
       int: removeLeadingZeros(integerPart),
-      frac: removeTrailingZeros(fractionPart)
+      frac: removeTrailingZeros(fractionPart),
     };
   }
 
@@ -790,10 +791,7 @@ export function stringNumberToNumber(
     if (number.startsWith('-')) number = number.slice(1);
 
     // reverse the string for easier use
-    number = removeLeadingZeros(number)
-      .split('')
-      .reverse()
-      .join('');
+    number = removeLeadingZeros(number).split('').reverse().join('');
 
     let ans: number = 0;
     for (let i = 0; i < number.length; ++i)
@@ -846,4 +844,4 @@ export function stringNumberToNumber(
 }
 // #endregion
 
-console.log(primitiveToString.primitiveToString(null));
+console.log('hi');
