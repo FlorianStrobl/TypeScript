@@ -82,3 +82,5 @@ function getDeepestBrakets(str: string): string[] {
 
   return vals;
 }
+
+console.log(new BooleanExp("true || false"));
