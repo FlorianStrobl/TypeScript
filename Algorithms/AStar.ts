@@ -1,4 +1,6 @@
 // no diagonal, only n o s w, cost per move is 1
+// TODO: correct handling of nearby end, better way of using path
+// TODO: correctly handling walls
 
 // #region Variables
 interface Vector2d {

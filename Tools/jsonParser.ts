@@ -102,7 +102,7 @@ namespace isPrimitive {
   export function isArray(ar: unknown): ar is Json[] {
     if (!Array.isArray(ar)) return false;
     // every value has to be valid too
-    for (const value of ar) if (!isPrimitive(value)) return false; // TODO why no recursion
+    for (const value of ar) if (!isPrimitive(value)) return false;
 
     return true;
   }
@@ -119,17 +119,10 @@ namespace isPrimitive {
   }
 }
 
-// bit todo
+// special cases todo
 export namespace isJsonString {
   export function isJson(json: string): boolean {
-    return (
-      isNull(json) ||
-      isBoolean(json) ||
-      isString(json) ||
-      isNumber(json) ||
-      isArray(json) ||
-      isObject(json)
-    );
+    return isJsonLiteral(json) || isArray(json) || isObject(json);
   }
 
   export function isJsonLiteral(json: string): boolean {
@@ -156,10 +149,10 @@ export namespace isJsonString {
     return !!n.match(isJsonNumberRegex);
   }
 
-  // better getAllArrayValuesUnsafe
   export function isArray(ar: string): boolean {
     ar = trimValueWhitespaces(ar);
 
+    // ez invalid checker
     if (!ar.startsWith('[') || !ar.endsWith(']')) return false;
 
     let values: string[] = [];
@@ -179,33 +172,26 @@ export namespace isJsonString {
         !isArray(value) &&
         !isObject(value)
       )
-        return false; // one part is not from type json
+        return false; // not from type json
     }
 
-    return true;
+    return true; // passed all tests
   }
 
-  // TODO complete rewrite lol
   export function isObject(obj: string): boolean {
     obj = trimValueWhitespaces(obj);
 
+    // ez invalid checker
     if (!obj.startsWith('{') || !obj.endsWith('}')) return false;
 
-    // remove the "{", "}"
-    // and get all the chars seperatted by "," and trim the beginning
-    // (get KV pairs)
-    const parts: string[] = getTopLevelCommas(removeChars(obj, 1, 1));
+    // get the KV pairs in the format of [ [key,value],[key,value] ]
+    const parts: string[][] = getKVPairsUnsafe(obj);
 
-    let kvPair: string[];
-    let name: string;
-    let value: string;
     for (let part of parts) {
-      kvPair = part.split(':');
-      if (kvPair.length !== 2) return false;
-      name = trimValueWhitespaces(kvPair[0]);
-      value = kvPair[1];
       // check invalid name
-      if (!isString(name)) return false;
+      if (!isString(part[0])) return false;
+      // check for invalid value
+      const value: string = part[1];
       if (
         !isNull(value) &&
         !isBoolean(value) &&
@@ -220,7 +206,7 @@ export namespace isJsonString {
     return true;
   }
 
-  // only is int todo
+  // TODO only is int todo
   export namespace SpecialSearches {
     // TODO
     export function isInteger(n: string): boolean {
@@ -277,17 +263,6 @@ export namespace isJsonString {
   }
 }
 
-/*
-(
-      !str
-        .split('')
-        .some((v, i, a) => v === '"' && (i === 0 || a[i - 1] !== '\\')) ||
-      !str
-        .split('')
-        .some((v, i, a) => v === '\\' && (i === 0 || a[i - 1] !== '\\'))
-    )
-*/
-
 // TODO
 export namespace primitiveToString {
   export function primitiveToString(x: Json) {
@@ -311,7 +286,7 @@ export namespace primitiveToString {
     return bool ? 'true' : 'false';
   }
 
-  // todo
+  // TODO
   export function toString(str: string): string {
     if (!isPrimitive.isString(str))
       throw new Error(`${str} is not a valid string.`);
@@ -393,7 +368,7 @@ export namespace stringToPrimitive {
   export function toBoolean(bool: string): boolean {
     if (!isJsonString.isBoolean(bool))
       throw new Error(`${bool} is not a valid json string.`);
-    return bool === 'true';
+    return trimValueWhitespaces(bool) === 'true';
   }
 
   // TODO
@@ -406,16 +381,22 @@ export namespace stringToPrimitive {
 
   // TODO
   export function toNumber(n: string): number {
+    if (!isJsonString.isNumber(n))
+      throw new Error(`${n} is not a valid json number.`);
     return 0;
   }
 
   // TODO
   export function toArray(ar: string): Json[] {
+    if (!isJsonString.isArray(ar))
+      throw new Error(`${ar} is not a valid json array.`);
     return [];
   }
 
   // TODO
   export function toObject(obj: string): JsonObject {
+    if (!isJsonString.isObject(obj))
+      throw new Error(`${obj} is not a valid json object.`);
     return {};
   }
 }
@@ -458,7 +439,7 @@ function trimValueWhitespaces(str: string): string {
 
 function trimStartWS(str: string): string {
   if (!hasStartWWhiteSpace(str)) return str;
-  return trimStartWS(removeChars(str, 1));
+  return trimStartWS(removeChars(str, 1, 0));
 
   function hasStartWWhiteSpace(s: string): boolean {
     return (
@@ -508,6 +489,7 @@ function getAllArrayValuesUnsafe(jsonArray: string): string[] {
   return getTopLevelCommas(jsonArray);
 }
 
+// assumes that it gets an valid json object and works arcordingly to this
 export function getKVPairsUnsafe(jsonObject: string): string[][] {
   jsonObject = trimValueWhitespaces(jsonObject);
 
@@ -541,6 +523,7 @@ export function getKVPairsUnsafe(jsonObject: string): string[][] {
       ) {
         startedName = false;
         finishedName = true;
+        continue;
       } else if (startedName && !finishedName) name += val;
 
       // part 2: value
@@ -548,7 +531,7 @@ export function getKVPairsUnsafe(jsonObject: string): string[][] {
         if (val === '"' && !lastCharWasEscape) isString = !isString; // TODO
         if (val === ':' && !startedValue && !isString) {
           startedValue = true;
-          continue;
+          continue; // go to the next iteration
         }
         if (startedValue) cvalue += val;
       }
@@ -557,7 +540,7 @@ export function getKVPairsUnsafe(jsonObject: string): string[][] {
       if (val === '\\') lastCharWasEscape = true;
     }
 
-    kvPairs.push([name, cvalue]);
+    kvPairs.push(['"' + name + '"', trimValueWhitespaces(cvalue)]);
   }
 
   return kvPairs;
