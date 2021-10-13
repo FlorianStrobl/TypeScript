@@ -286,12 +286,11 @@ export namespace primitiveToString {
     return bool ? 'true' : 'false';
   }
 
-  // TODO
   export function toString(str: string): string {
     if (!isPrimitive.isString(str))
       throw new Error(`${str} is not a valid string.`);
-    // TODO replace single \ and " with \\ and \"
-    str.replace('!', '');
+    str.replaceAll(/\\/g, '\\\\');
+    str.replaceAll(/"/g, '\\"');
     return '"' + str + '"';
   }
 
@@ -826,3 +825,13 @@ export function stringNumberToNumber(
   }
 }
 // #endregion
+
+/*
+console.log(
+  primitiveToString.toString(
+    'HI this is a string \\ because " I like \' stringss lmao'
+  )
+);
+*/
+
+console.log('test'.replaceAll(/t/g, 'l'));
