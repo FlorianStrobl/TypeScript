@@ -289,8 +289,8 @@ export namespace primitiveToString {
   export function toString(str: string): string {
     if (!isPrimitive.isString(str))
       throw new Error(`${str} is not a valid string.`);
-    str.replaceAll(/\\/g, '\\\\');
-    str.replaceAll(/"/g, '\\"');
+    str = str.replaceAll(/\\/g, '\\\\');
+    str = str.replaceAll(/"/g, '\\"');
     return '"' + str + '"';
   }
 
@@ -318,7 +318,6 @@ export namespace primitiveToString {
     return ans;
   }
 
-  // TODO test
   export function toArray(ar: Json[]): string {
     if (!isPrimitive.isArray(ar))
       throw new Error(`Array ${ar} is not a valid json array.`);
@@ -331,7 +330,6 @@ export namespace primitiveToString {
     return ans;
   }
 
-  // TODO test
   export function toObject(obj: JsonObject): string {
     if (!isPrimitive.isObject(obj))
       throw new Error(`Object ${obj} is not a valid json object.`);
@@ -826,12 +824,13 @@ export function stringNumberToNumber(
 }
 // #endregion
 
-/*
 console.log(
-  primitiveToString.toString(
-    'HI this is a string \\ because " I like \' stringss lmao'
-  )
+  primitiveToString.toObject({
+    'a\\': 'test " lel',
+    'b"': true,
+    'c\\"\'': false,
+    d: null,
+    e: [false, { f: null }],
+    f: 'what the fuck \n tf " fff \\',
+  })
 );
-*/
-
-console.log('test'.replaceAll(/t/g, 'l'));
