@@ -491,6 +491,7 @@ export namespace NumberParser {
     }
   }
 
+  // TODO
   export function numberToStringParser(
     number: number,
     base: 'dec' | 'bin' | 'oct' | 'hex' = 'dec',
@@ -765,8 +766,10 @@ export namespace NumberParser {
   }
 }
 
-//console.log('parsed number', stringToNumberParser('.5e+1'));
-//console.log(numberToStringParser(5));
+console.log(NumberParser.stringToNumberParser('.5e+1'));
+console.log(NumberParser.numberToStringParser(5));
+
+console.log(BinaryNumbers.Integer.binaryStringToSInt('10'));
 
 /*
 console.log(BinaryNumbers.Integer.sIntToBinaryString(0, 5));

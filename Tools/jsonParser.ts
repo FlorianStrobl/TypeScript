@@ -263,7 +263,7 @@ export namespace isJsonString {
   }
 }
 
-// TODO
+// TODO - toNumber()
 export namespace primitiveToString {
   export function primitiveToString(x: Json) {
     if (isPrimitive.isNull(x)) return toNull(x);
@@ -325,7 +325,7 @@ export namespace primitiveToString {
     let ans: string = '[';
     for (const e of ar) ans += primitiveToString(e) + ',';
 
-    ans = removeChars(ans, 0, 1) + ']';
+    ans = ans.length === 1 ? '[]' : removeChars(ans, 0, 1) + ']';
 
     return ans;
   }
@@ -338,7 +338,7 @@ export namespace primitiveToString {
     for (const [k, v] of Object.entries(obj))
       ans += toString(k) + ':' + primitiveToString(v) + ',';
 
-    ans = removeChars(ans, 0, 1) + '}';
+    ans = ans.length === 1 ? '{}' : removeChars(ans, 0, 1) + '}';
 
     return ans;
   }
@@ -824,13 +824,4 @@ export function stringNumberToNumber(
 }
 // #endregion
 
-console.log(
-  primitiveToString.toObject({
-    'a\\': 'test " lel',
-    'b"': true,
-    'c\\"\'': false,
-    d: null,
-    e: [false, { f: null }],
-    f: 'what the fuck \n tf " fff \\',
-  })
-);
+console.log();
