@@ -67,7 +67,7 @@ function getDeepestBrakets(str: string): string[] {
   let curVal: string = '';
   let vals: string[] = [];
 
-  for (let b of str) {
+  for (const b of str) {
     if (b === '(') {
       write = true;
       curVal = '';

@@ -3,24 +3,20 @@
 // jsonTToT: string => T
 // TToJsonT: T => string
 
+// #region Types and RegExp
 type Json = null | boolean | string | number | Json[] | JsonObject;
 type JsonObject = {
   [property: string]: Json;
 };
 
-// todo string: escapes have to be correct
-
 // [ \t\n\r]* = space/tab/new line/carraige return zero or more
-const isJsonWhitespace: RegExp = /[ \t\n\r]*/;
+const isJsonWhitespaceRegex: RegExp = /[ \n\r\t]*/;
 const isJsonNullRegex: RegExp = /^null$/;
 const isJsonBoolRegex: RegExp = /^(true|false)$/;
+const isJsonNumberRegex: RegExp = /^-?(0|[1-9]\d*)(\.\d+)?([eE][\+-]?\d+)?$/;
 const isJsonStringRegex: RegExp =
-  /^"(\\"|\\\\|\\\/|\\b|\\f|\\n|\\r|\\t|\\[0-9a-fA-F]{4}|[^"\\])*?"$/;
-const isJsonNumberRegex: RegExp =
-  /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][\+-]?\d+)?$/;
-// TODO
-const isJsonArray: RegExp =
-  /\[(([ \t\n\r]*)|((-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][\+-]?\d+)?)|null|true|false))\]/;
+  /^"(\\"|\\\\|\\\/|\\b|\\f|\\n|\\r|\\t|\\[0-9a-fA-F]{4}|[^"\\])*"$/;
+// #endregion
 
 export namespace Json {
   export enum FormatMode {
@@ -29,22 +25,41 @@ export namespace Json {
     RemoveSpaces,
   }
 
-  export function stringify(x: Json): string {
-    return '';
+  /**
+   * @param replacer A function that transforms the results.
+   * @param replacer An array of strings and numbers that acts as an approved list for selecting the object properties that will be stringified.
+   */
+
+  /**
+   * Converts a JavaScript value to a JavaScript Object Notation (JSON) string.
+   *
+   * @param value A JavaScript value, usually an object or array, to be converted.
+   * @param space Adds indentation, white space, and line break characters to the return-value JSON text to make it easier to read.
+   * @returns Returns a valid Json string.
+   */
+  export function stringify(
+    value: Json,
+    space: ' ' | '\n' | '\r' | '\t' = ' '
+  ): string {
+    return primitiveToString.primitiveToString(value);
   }
 
-  export function parse<T extends Json>(jsonString: string): T {
-    return null as T;
+  /**
+   * Converts a JavaScript Object Notation (JSON) string into an object.
+   *
+   * @param text A valid JSON string.
+   * @returns A JavaScript value.
+   */
+  export function parse<T extends Json>(text: string): T {
+    return stringToPrimitive.stringToPrimitive(text) as T;
   }
 
-  export function prettify(jsonString: string, format: FormatMode): string {
+  export function prettify(text: string, format: FormatMode): string {
     // TODO could have many spaces
     let ans: string = '';
-    if (format === FormatMode.AddSpacesSimple)
-      ans = addSpacesSimple(jsonString);
-    if (format === FormatMode.AddSpacesAdvanced)
-      ans = addSpacesAdvanced(jsonString);
-    if (format === FormatMode.RemoveSpaces) ans = removeSpaces(jsonString);
+    if (format === FormatMode.AddSpacesSimple) ans = addSpacesSimple(text);
+    if (format === FormatMode.AddSpacesAdvanced) ans = addSpacesAdvanced(text);
+    if (format === FormatMode.RemoveSpaces) ans = removeSpaces(text);
 
     return ans;
 
@@ -61,26 +76,33 @@ export namespace Json {
     }
   }
 
-  export function isValidString(jsonString: string): boolean {
-    return isJsonString.isJson(jsonString);
+  export function validation(text: string): boolean {
+    return isJsonString.isJson(text);
   }
 
-  export function isValidPrimitive(json: unknown): boolean {
-    return isPrimitive.isPrimitive(json);
+  export function valueValidation(value: unknown): boolean {
+    return isPrimitive.isPrimitive(value);
   }
 }
 
 // finish
 namespace isPrimitive {
   /**
-   * only valid json primitves so e.g. Infinity is not a valid number
+   * only valid json primitives so e.g. Infinity is not a valid number
    */
-  export function isPrimitive(x: unknown): boolean {
-    return isPrimitiveLiteral(x) || isArray(x) || isObject(x);
+  export function isPrimitive(primitive: unknown): boolean {
+    return (
+      isPrimitiveLiteral(primitive) || isArray(primitive) || isObject(primitive)
+    );
   }
 
-  export function isPrimitiveLiteral(x: unknown): boolean {
-    return isNull(x) || isBoolean(x) || isString(x) || isNumber(x);
+  export function isPrimitiveLiteral(primitive: unknown): boolean {
+    return (
+      isNull(primitive) ||
+      isBoolean(primitive) ||
+      isString(primitive) ||
+      isNumber(primitive)
+    );
   }
 
   export function isNull(n: unknown): n is null {
@@ -119,7 +141,7 @@ namespace isPrimitive {
   }
 }
 
-// special cases todo
+// special case (int) TODO
 export namespace isJsonString {
   export function isJson(json: string): boolean {
     return isJsonLiteral(json) || isArray(json) || isObject(json);
@@ -265,14 +287,14 @@ export namespace isJsonString {
 
 // TODO - toNumber()
 export namespace primitiveToString {
-  export function primitiveToString(x: Json) {
-    if (isPrimitive.isNull(x)) return toNull(x);
-    else if (isPrimitive.isBoolean(x)) return toBoolean(x);
-    else if (isPrimitive.isString(x)) return toString(x);
-    else if (isPrimitive.isNumber(x)) return toNumber(x);
-    else if (isPrimitive.isArray(x)) return toArray(x);
-    else if (isPrimitive.isObject(x)) return toObject(x);
-    else throw new Error('Could not convert data');
+  export function primitiveToString(json: Json) {
+    if (isPrimitive.isNull(json)) return toNull(json);
+    else if (isPrimitive.isBoolean(json)) return toBoolean(json);
+    else if (isPrimitive.isString(json)) return toString(json);
+    else if (isPrimitive.isNumber(json)) return toNumber(json);
+    else if (isPrimitive.isArray(json)) return toArray(json);
+    else if (isPrimitive.isObject(json)) return toObject(json);
+    else throw new Error(`${json} is not a valid json primitive.`);
   }
 
   export function toNull(n: null): string {
@@ -346,34 +368,59 @@ export namespace primitiveToString {
 
 // TODO
 export namespace stringToPrimitive {
-  export function stringToPrimitive(x: string): Json {
-    if (isJsonString.isNull(x)) return toNull(x);
-    else if (isJsonString.isBoolean(x)) return toBoolean(x);
-    else if (isJsonString.isString(x)) return toString(x);
-    else if (isJsonString.isNumber(x)) return toNumber(x);
-    else if (isJsonString.isArray(x)) return toArray(x);
-    else if (isJsonString.isObject(x)) return toObject(x);
-    else throw new Error('Could not convert data');
+  export function stringToPrimitive(string: string): Json {
+    if (isJsonString.isNull(string)) return toNull(string);
+    else if (isJsonString.isBoolean(string)) return toBoolean(string);
+    else if (isJsonString.isString(string)) return toString(string);
+    else if (isJsonString.isNumber(string)) return toNumber(string);
+    else if (isJsonString.isArray(string)) return toArray(string);
+    else if (isJsonString.isObject(string)) return toObject(string);
+    else throw new Error(`${string} is not a valid json string.`);
   }
 
   export function toNull(n: string): null {
     if (!isJsonString.isNull(n))
-      throw new Error(`${n} is not a valid json string.`);
+      throw new Error(`${n} is not a valid json null.`);
     return null;
   }
 
   export function toBoolean(bool: string): boolean {
     if (!isJsonString.isBoolean(bool))
-      throw new Error(`${bool} is not a valid json string.`);
+      throw new Error(`${bool} is not a valid json boolean.`);
     return trimValueWhitespaces(bool) === 'true';
   }
 
-  // TODO
   export function toString(str: string): string {
     if (!isJsonString.isString(str))
       throw new Error(`${str} is not a valid json string.`);
-    // TODO backslash for " and \(but not for certain chars)
-    return removeChars(str, 1, 1);
+    // remove the beginning and ending "
+    str = removeChars(str, 1, 1);
+
+    // replace escaped characters
+    str = str.replaceAll(
+      /(\\\\)|(\\")|(\\\/)|(\\n)|(\\t)|(\\b)|(\\f)|(\\r)/g,
+      (sub) => {
+        switch (sub) {
+          case '\\\\':
+            return '\\'; // backspace
+          case '\\"':
+            return '"'; // "
+          case '\\/':
+            return '/'; // Soldius
+          case '\\n':
+            return '\n'; // New line
+          case '\\t':
+            return '\t'; // Tab
+          case '\\b':
+            return '\b'; // Backspace
+          case '\\f':
+            return '\f'; // Form feed
+          case '\\r':
+            return '\r'; // Carriage return
+        }
+      }
+    );
+    return str;
   }
 
   // TODO
@@ -399,7 +446,7 @@ export namespace stringToPrimitive {
 }
 
 // TODO - everything
-namespace jsonStringManipulation {
+export namespace jsonStringManipulation {
   export function getArrayValues(jsonArray: string): string[] {
     if (!isJsonString.isArray(jsonArray))
       throw new Error('Not a valid json array');
@@ -462,7 +509,7 @@ function trimEndWS(str: string): string {
   }
 }
 
-export function removeChars(
+function removeChars(
   str: string,
   numberOfStartChars: number,
   numberOfEndChars: number = 0
@@ -475,27 +522,27 @@ export function removeChars(
 }
 
 // TODO get top level elements in "," TODO redundent because better just implementing the return
-function getAllArrayValuesUnsafe(jsonArray: string): string[] {
-  jsonArray = trimValueWhitespaces(jsonArray);
+function getAllArrayValuesUnsafe(text: string): string[] {
+  text = trimValueWhitespaces(text);
 
   // just assume it is an valid jsonArray
-  if (!jsonArray.startsWith('[') || !jsonArray.endsWith(']'))
+  if (!text.startsWith('[') || !text.endsWith(']'))
     throw new Error('Is not an json array');
-  jsonArray = removeChars(jsonArray, 1, 1);
+  text = removeChars(text, 1, 1);
 
-  return getTopLevelCommas(jsonArray);
+  return getTopLevelCommas(text);
 }
 
 // assumes that it gets an valid json object and works arcordingly to this
-export function getKVPairsUnsafe(jsonObject: string): string[][] {
-  jsonObject = trimValueWhitespaces(jsonObject);
+function getKVPairsUnsafe(text: string): string[][] {
+  text = trimValueWhitespaces(text);
 
-  if (!jsonObject.startsWith('{') || !jsonObject.endsWith('}'))
+  if (!text.startsWith('{') || !text.endsWith('}'))
     throw new Error('Is not an json object');
-  jsonObject = removeChars(jsonObject, 1, 1);
+  text = removeChars(text, 1, 1);
 
   let kvPairs: string[][] = [];
-  const kvValues: string[] = getTopLevelCommas(jsonObject);
+  const kvValues: string[] = getTopLevelCommas(text);
 
   // todo escaped "
   for (let value of kvValues) {
@@ -545,7 +592,7 @@ export function getKVPairsUnsafe(jsonObject: string): string[][] {
 
 // input: 'null, true, false, "Hello", 0, [0, 1, "World"], {"key":"value"}'
 // output: ['null', 'true', 'false', '"Hello"', '0', '[0, 1, "World"]', '{"key":"value"}']
-export function getTopLevelCommas(string: string): string[] {
+function getTopLevelCommas(text: string): string[] {
   let curVal: string = '';
   let values: string[] = [];
 
@@ -557,7 +604,7 @@ export function getTopLevelCommas(string: string): string[] {
 
   let notPush: boolean; // saving current value to the values array
 
-  for (const char of string) {
+  for (const char of text) {
     notPush = false;
 
     // if in string
@@ -606,7 +653,7 @@ export function getTopLevelCommas(string: string): string[] {
 // #endregion
 
 // #region Number parser
-export function stringNumberToNumber(
+function stringNumberToNumber(
   number: string,
   errorInsteadOfNaN: boolean = false
 ): number {
