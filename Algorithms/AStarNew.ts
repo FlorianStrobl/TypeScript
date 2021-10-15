@@ -13,7 +13,8 @@ namespace AStar {
   const s: field = 1; // start point number
   const e: field = 2; // end end number
   const w: field = 3; // wall number
-  const p: field = 4; // path number
+  const sw: field = 4; // small wall number (walls where you shouldn't be, but can)
+  const p: field = -1; // path number
   // #endregion
 
   // #region length of the field
@@ -54,6 +55,7 @@ namespace AStar {
     fieldYLength,
     undefined
   );
+  export const currentWayFields: Vector2d[][] = [];
   // #endregion
   // #endregion
 
@@ -106,27 +108,51 @@ namespace AStar {
   // #endregion
 
   // #region a star solve functions
-  function exploreField(position: Vector2d): void {
+  function exploreField(position: Vector2d, origin: Vector2d): void {
     // value of the searched field
     const fieldValue: field = field[position.y][position.x];
 
     switch (fieldValue) {
       case s:
         // returned to start, just ignore
-        break;
+        return;
       case e:
         // found end and shortest path
+        currentWayFields.push([position, origin]);
         foundWay(position);
-        break;
+        return;
       case w:
         // hit a wall, return
-        break;
+        return;
+      case sw:
+        // hit a wall, return
+        return;
       case n:
-        // normal field, start exploring
-        break;
+        // normal field, start exploring the neighbour fields
+        currentWayFields.push([position, origin]);
+        exploreNeighbours();
+        return;
       default:
         // error, should value should always be one of these four
-        break;
+        return;
+
+        function exploreNeighbours() {
+          const toExploreFields: Vector2d[] = [
+            { x: 1, y: 0 },
+            { x: 0, y: 1 },
+            { x: 1, y: 1 },
+            { x: -1, y: 0 },
+            { x: 0, y: -1 },
+            { x: -1, y: -1 },
+            { x: 1, y: -1 },
+            { x: -1, y: 1 },
+          ];
+          for (const n of toExploreFields)
+            exploreField(
+              { x: position.x + n.x, y: position.y + n.y },
+              position
+            );
+        }
     }
   }
 
