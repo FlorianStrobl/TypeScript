@@ -1,22 +1,27 @@
 namespace AStar {
-  // types
+  // #region types
+  type cost = number;
   type field = number;
   interface Vector2d {
     x: field;
     y: field;
   }
+  // #endregion
 
-  // number alias
+  // #region number alias
   const n: field = 0; // nothing
   const s: field = 1; // start point number
   const e: field = 2; // end end number
   const w: field = 3; // wall number
   const p: field = 4; // path number
+  // #endregion
 
-  // length of the field
+  // #region length of the field
   const fieldXLength: number = 19;
   const fieldYLength: number = 10;
+  // #endregion
 
+  // #region Field variables
   // settings of the field
   const fieldSettings: Vector2d[][] = [
     [
@@ -30,11 +35,33 @@ namespace AStar {
   ];
 
   // the main field
-  export const field: field[][] = generateGameField(fieldXLength, fieldYLength);
-  // #region Field
+  export const field: field[][] = generateGameField(
+    fieldXLength,
+    fieldYLength,
+    fieldSettings
+  );
+
+  // #region costs and way
+  // way cost from start field to current field
+  export const gCost: cost[][] = generateGameField(
+    fieldXLength,
+    fieldYLength,
+    undefined
+  );
+  // cost from the current position to the end field
+  export const hCost: cost[][] = generateGameField(
+    fieldXLength,
+    fieldYLength,
+    undefined
+  );
+  // #endregion
+  // #endregion
+
+  // #region Field functions
   function generateGameField(
     XLength: number = fieldXLength,
-    YLength: number = fieldYLength
+    YLength: number = fieldYLength,
+    preValues?: Vector2d[][]
   ): field[][] {
     let newField: field[][] = [];
 
@@ -46,12 +73,13 @@ namespace AStar {
       for (let x = 0; x < XLength; ++x) newField[y].push(n);
     }
 
-    // set the field values
-    for (const value of fieldSettings) {
-      let coords: Vector2d = value[0];
-      let num: field = value[1].x;
-      newField[coords.x][coords.y] = num;
-    }
+    if (preValues !== undefined)
+      // set the field values
+      for (const value of preValues) {
+        let coords: Vector2d = value[0]; // coords for the value
+        let num: field = value[1].x; // value for the field
+        newField[coords.x][coords.y] = num;
+      }
 
     return newField;
   }
@@ -76,6 +104,26 @@ namespace AStar {
     return fieldString;
   }
   // #endregion
+
+  // #region a star solve functions
+  function discoverField(pos: Vector2d): void {
+    // value of the searched field
+    const fieldValue: field = field[pos.y][pos.x];
+
+    if (fieldValue === s) {
+      // returned to start, just ignore
+    } else if (fieldValue === e) {
+      // found end and shortest way
+    } else if (fieldValue === w) {
+      // hit wall, return
+    } else if (fieldValue === n) {
+      // normal field, start exploring
+    } else {
+      // error, should value should always be one of these four
+    }
+  }
+  // #endregion
 }
 
 console.log(AStar.showField());
+console.log(AStar.showField(AStar.hCost));
