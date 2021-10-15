@@ -106,21 +106,32 @@ namespace AStar {
   // #endregion
 
   // #region a star solve functions
-  function discoverField(pos: Vector2d): void {
+  function exploreField(position: Vector2d): void {
     // value of the searched field
-    const fieldValue: field = field[pos.y][pos.x];
+    const fieldValue: field = field[position.y][position.x];
 
-    if (fieldValue === s) {
-      // returned to start, just ignore
-    } else if (fieldValue === e) {
-      // found end and shortest way
-    } else if (fieldValue === w) {
-      // hit wall, return
-    } else if (fieldValue === n) {
-      // normal field, start exploring
-    } else {
-      // error, should value should always be one of these four
+    switch (fieldValue) {
+      case s:
+        // returned to start, just ignore
+        break;
+      case e:
+        // found end and shortest path
+        foundWay(position);
+        break;
+      case w:
+        // hit a wall, return
+        break;
+      case n:
+        // normal field, start exploring
+        break;
+      default:
+        // error, should value should always be one of these four
+        break;
     }
+  }
+
+  function foundWay(endFieldPosition: Vector2d): Vector2d[] {
+    return [];
   }
   // #endregion
 }
