@@ -4,9 +4,9 @@
 // TToJsonT: T => string
 
 // #region Types and RegExp
-type Json = null | boolean | string | number | Json[] | JsonObject;
+type JSON = null | boolean | string | number | JSON[] | JsonObject;
 type JsonObject = {
-  [property: string]: Json;
+  [property: string]: JSON;
 };
 
 // [ \t\n\r]* = space/tab/new line/carraige return zero or more
@@ -17,6 +17,8 @@ const isJsonNumberRegex: RegExp = /^-?(0|[1-9]\d*)(\.\d+)?([eE][\+-]?\d+)?$/;
 const isJsonStringRegex: RegExp =
   /^"(\\"|\\\\|\\\/|\\b|\\f|\\n|\\r|\\t|\\[0-9a-fA-F]{4}|[^"\\])*"$/;
 // #endregion
+
+// TODO Fix \r for spacing
 
 export namespace Json {
   export enum FormatMode {
@@ -38,10 +40,10 @@ export namespace Json {
    * @returns Returns a valid Json string.
    */
   export function stringify(
-    value: Json,
-    space: ' ' | '\n' | '\r' | '\t' = ' '
+    value: JSON,
+    space: '' | ' ' | '\n' | '\r' | '\t' = ''
   ): string {
-    return primitiveToString.primitiveToString(value);
+    return primitiveToString.primitiveToString(value, space);
   }
 
   /**
@@ -50,7 +52,7 @@ export namespace Json {
    * @param text A valid JSON string.
    * @returns A JavaScript value.
    */
-  export function parse<T extends Json>(text: string): T {
+  export function parse<T extends JSON>(text: string): T {
     return stringToPrimitive.stringToPrimitive(text) as T;
   }
 
@@ -121,7 +123,7 @@ namespace isPrimitive {
     return typeof n === 'number' && !Number.isNaN(n) && Number.isFinite(n);
   }
 
-  export function isArray(ar: unknown): ar is Json[] {
+  export function isArray(ar: unknown): ar is JSON[] {
     if (!Array.isArray(ar)) return false;
     // every value has to be valid too
     for (const value of ar) if (!isPrimitive(value)) return false;
@@ -285,15 +287,18 @@ export namespace isJsonString {
   }
 }
 
-// TODO - toNumber()
+// to number
 export namespace primitiveToString {
-  export function primitiveToString(json: Json) {
+  export function primitiveToString(
+    json: JSON,
+    space: '' | ' ' | '\n' | '\r' | '\t' = ''
+  ) {
     if (isPrimitive.isNull(json)) return toNull(json);
     else if (isPrimitive.isBoolean(json)) return toBoolean(json);
     else if (isPrimitive.isString(json)) return toString(json);
     else if (isPrimitive.isNumber(json)) return toNumber(json);
-    else if (isPrimitive.isArray(json)) return toArray(json);
-    else if (isPrimitive.isObject(json)) return toObject(json);
+    else if (isPrimitive.isArray(json)) return toArray(json, space);
+    else if (isPrimitive.isObject(json)) return toObject(json, space);
     else throw new Error(`${json} is not a valid json primitive.`);
   }
 
@@ -316,16 +321,16 @@ export namespace primitiveToString {
     return '"' + str + '"';
   }
 
-  // TODO mode?: "int"|"float"
+  // TODO correct output
   export function toNumber(n: number): string {
     if (!isPrimitive.isNumber(n))
-      throw new Error(`The number "${n}" is not a primitive number.`);
+      throw new Error(`${n} is not a primitive number.`);
 
     let ans: string = '';
     const integerPart: number = Math.trunc(n);
     const decimalPart: number = Math.abs(n - integerPart);
 
-    ans = integerPart.toString();
+    ans = integerPart.toString(); // TODO, not use to string
     ans += decimalPart
       .toString()
       .split('')
@@ -340,27 +345,33 @@ export namespace primitiveToString {
     return ans;
   }
 
-  export function toArray(ar: Json[]): string {
+  export function toArray(
+    ar: JSON[],
+    space: '' | ' ' | '\n' | '\r' | '\t' = ''
+  ): string {
     if (!isPrimitive.isArray(ar))
       throw new Error(`Array ${ar} is not a valid json array.`);
 
     let ans: string = '[';
-    for (const e of ar) ans += primitiveToString(e) + ',';
+    for (const e of ar) ans += primitiveToString(e) + ',' + space;
 
-    ans = ans.length === 1 ? '[]' : removeChars(ans, 0, 1) + ']';
+    ans = ans.length === 1 ? '[]' : removeChars(ans, 0, space.length + 1) + ']';
 
     return ans;
   }
 
-  export function toObject(obj: JsonObject): string {
+  export function toObject(
+    obj: JsonObject,
+    space: '' | ' ' | '\n' | '\r' | '\t' = ''
+  ): string {
     if (!isPrimitive.isObject(obj))
       throw new Error(`Object ${obj} is not a valid json object.`);
 
     let ans: string = '{';
     for (const [k, v] of Object.entries(obj))
-      ans += toString(k) + ':' + primitiveToString(v) + ',';
+      ans += toString(k) + ':' + primitiveToString(v) + ',' + space;
 
-    ans = ans.length === 1 ? '{}' : removeChars(ans, 0, 1) + '}';
+    ans = ans.length === 1 ? '{}' : removeChars(ans, 0, space.length + 1) + '}';
 
     return ans;
   }
@@ -368,7 +379,7 @@ export namespace primitiveToString {
 
 // TODO
 export namespace stringToPrimitive {
-  export function stringToPrimitive(string: string): Json {
+  export function stringToPrimitive(string: string): JSON {
     if (isJsonString.isNull(string)) return toNull(string);
     else if (isJsonString.isBoolean(string)) return toBoolean(string);
     else if (isJsonString.isString(string)) return toString(string);
@@ -431,7 +442,7 @@ export namespace stringToPrimitive {
   }
 
   // TODO
-  export function toArray(ar: string): Json[] {
+  export function toArray(ar: string): JSON[] {
     if (!isJsonString.isArray(ar))
       throw new Error(`${ar} is not a valid json array.`);
     return [];
@@ -870,5 +881,3 @@ function stringNumberToNumber(
   }
 }
 // #endregion
-
-console.log();
