@@ -461,11 +461,11 @@ export namespace stringToPrimitive {
   }
 }
 
-const f = '{"test \\\\ whut  ok":false}';
+const f = '{"test \\", whut  ok":false}';
 console.log(
-  stringToPrimitive.stringToPrimitive(f),
-  getTopLevelCommas(f.slice(1, f.length - 1)),
-  f
+  stringToPrimitive.toObject(f),
+  getKVPairsUnsafe(f)
+  //f
 );
 
 // TODO - everything
@@ -670,13 +670,10 @@ function getTopLevelCommas(text: string): string[] {
       lastCharWasEscape = true;
     else if (lastCharWasEscape) lastCharWasEscape = false;
   }
-
-  console.log('run', curVal);
-
   if (trimValueWhitespaces(curVal) !== '') values.push(curVal); // add last var or empty
-  values = values.map((s) => trimValueWhitespaces(s)); // remove whitespaces for each value
-  console.log('run 2', values);
-  return values;
+
+  // remove whitespaces for each value
+  return values.map((s) => trimValueWhitespaces(s));
 }
 // #endregion
 
