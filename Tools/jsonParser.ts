@@ -360,6 +360,7 @@ export namespace primitiveToString {
     return ans;
   }
 
+  // TODO space
   export function toObject(
     obj: JsonObject,
     space: '' | ' ' | '\n' | '\r' | '\t' = ''
@@ -460,9 +461,6 @@ export namespace stringToPrimitive {
     return values;
   }
 }
-
-console.log(Json.stringify({ test: 'test' }), JSON.stringify({ test: 'test' }));
-//console.log(Json.parse('"Hello World"'), JSON.parse('"Hello World"'));
 
 // TODO - everything
 export namespace jsonStringManipulation {
