@@ -435,13 +435,13 @@ export namespace stringToPrimitive {
     return str;
   }
 
-  // TODO
   export function toNumber(n: string): number {
     if (!isJsonString.isNumber(n))
       throw new Error(`${n} is not a valid json number.`);
-    return 0;
+    return stringNumberToNumber(n);
   }
 
+  // TODO escaped characters
   export function toArray(ar: string): JSON[] {
     if (!isJsonString.isArray(ar))
       throw new Error(`${ar} is not a valid json array.`);
@@ -704,17 +704,11 @@ function stringNumberToNumber(
 
     if (values.int !== '') finalInt = uIntStringToNumber(values.int); // get the int part
 
-    // get the fraction part
-    if (values.frac !== '') {
-      let fracN: number = uIntStringToNumber(values.frac);
-      const fracNLength: number = values.frac.toString().length; // TODO toString
+    // convert the string fraction part (saved as a BigInt String) into a floating point part
+    finalFrac = binIntToFloat(values.frac);
 
-      for (let i = 0; i < fracNLength; ++i) fracN /= 10; // shift the value to the right point place
-
-      finalFrac = fracN; // add the frac part to the int part
-    }
-
-    return (finalInt + finalFrac) * parts.sign; // return the value with the correct sign
+    // return the value with the correct sign
+    return parts.sign === 1 ? finalInt + finalFrac : -(finalInt + finalFrac);
   } catch (e) {
     if (errorInsteadOfNaN) throw new Error(e);
     else return NaN;
@@ -771,6 +765,16 @@ function stringNumberToNumber(
 
       return minus + removeLeadingZeros(str); // return sign + str without zeros
     }
+  }
+
+  // "101" will be interpreted as "0.101"
+  function binIntToFloat(number: string): number {
+    const digits: string = '0123456789';
+    let ans: number = 0;
+    for (let i = 0; i < number.length; ++i)
+      ans += digits.indexOf(number[i]) / Math.pow(10, i);
+    ans /= 10;
+    return ans;
   }
 
   // edit int and frac with the exp modifier, input has to be formatted
@@ -833,6 +837,7 @@ function stringNumberToNumber(
   }
 
   function uIntStringToNumber(number: string): number {
+    const digits: string = '0123456789';
     const sign: number = number.startsWith('-') ? -1 : 1;
     if (number.startsWith('-')) number = number.slice(1);
 
@@ -841,36 +846,9 @@ function stringNumberToNumber(
 
     let ans: number = 0;
     for (let i = 0; i < number.length; ++i)
-      ans += digitToValue(number[i]) * Math.pow(10, i);
+      ans += digits.indexOf(number[i]) * Math.pow(10, i);
 
     return ans * sign;
-
-    function digitToValue(x: string): number {
-      switch (x) {
-        case '0':
-          return 0;
-        case '1':
-          return 1;
-        case '2':
-          return 2;
-        case '3':
-          return 3;
-        case '4':
-          return 4;
-        case '5':
-          return 5;
-        case '6':
-          return 6;
-        case '7':
-          return 7;
-        case '8':
-          return 8;
-        case '9':
-          return 9;
-        default:
-          return NaN;
-      }
-    }
   }
 
   function removeLeadingZeros(string: string): string {
@@ -889,3 +867,67 @@ function stringNumberToNumber(
   }
 }
 // #endregion
+
+function bin(float: number): string {
+  if (typeof float !== 'number') throw new Error('Invalid input number');
+
+  const buffer: ArrayBuffer = new ArrayBuffer(8);
+  new Float64Array(buffer)[0] = float;
+  let ans: string = new BigUint64Array(buffer)[0].toString(2); // convert it to binary, TODO toString()
+  while (ans.length < 64) ans = '0' + ans; // fill the start with leading zeros
+
+  return ans;
+}
+
+// TODO
+const t = [
+  '0.1',
+  '0.2',
+  '0.3',
+  '0.30000000000000004',
+  '0.30000000000000009',
+  '0.30000000000000010',
+  '0.30000000000000011',
+  '0.30000000000000012',
+  '0.30000000000000013',
+  '0.30000000000000014',
+  '0.30000000000000015',
+  '0.30000000000000016',
+  '0.30000000000000017',
+  '0.30000000000000018',
+  '0.30000000000000019',
+  '0.30000000000000020',
+  '0.30000000000000021',
+  '0.78942874538795347',
+];
+//for (const s of t) console.log(s, Number(s), stringToPrimitive.toNumber(s));
+
+const testString: string[] = [
+  '0.78942874538795347',
+  '0.30000000000000015',
+  '0.30000000000000019',
+];
+const f: number = 2;
+
+console.log(Number(testString[f]), stringToPrimitive.toNumber(testString[f]));
+
+console.log(binIntToFloat(testString[f].slice(2)));
+
+// "101" will be interpreted as "0.101"
+function binIntToFloat(number: string): number {
+  const digits: string = '0123456789';
+  let ans: number = 0;
+
+  for (let i = 0; i < number.length; ++i) {
+    // one line
+    //ans += digits.indexOf(number[i]) / Math.pow(10, i + 1);
+    //ans += digits.indexOf(number[i]) * Math.pow(10, -(i + 1));
+
+    // two lines
+    ans += digits.indexOf(number[i]) / Math.pow(10, i);
+    //ans += digits.indexOf(number[i]) * Math.pow(10, -i);
+  }
+  ans /= 10;
+
+  return ans;
+}

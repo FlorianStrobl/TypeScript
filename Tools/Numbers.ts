@@ -781,3 +781,17 @@ console.log(BinaryNumbers.Integer.sIntToBinaryString(-1, 4));
 console.log(BinaryNumbers.Integer.sIntToBinaryString(-7, 5));
 console.log(BinaryNumbers.Integer.sIntToBinaryString(-6, 4));
 */
+
+function bin(float: number): string {
+  if (typeof float !== 'number') throw new Error('Invalid input number');
+
+  const buffer: ArrayBuffer = new ArrayBuffer(8);
+  new Float64Array(buffer)[0] = float;
+  let ans: string = new BigUint64Array(buffer)[0].toString(2); // convert it to binary, TODO toString()
+  while (ans.length < 64) ans = '0' + ans; // fill the start with leading zeros
+
+  return ans;
+}
+
+console.log(bin(0.1 + 0.2));
+console.log((0.1 + 0.2).toString(), bin(Number((0.1 + 0.2).toString())));
