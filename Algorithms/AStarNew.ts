@@ -108,7 +108,11 @@ namespace AStar {
   // #endregion
 
   // #region a star solve functions
-  function exploreField(position: Vector2d, origin: Vector2d): void {
+  function exploreField(
+    position: Vector2d,
+    origin: Vector2d,
+    currentGCost: Vector2d
+  ): void {
     // value of the searched field
     const fieldValue: field = field[position.y][position.x];
 
@@ -118,7 +122,7 @@ namespace AStar {
         return;
       case e:
         // found end and shortest path
-        currentWayFields.push([position, origin]);
+        addCurrentWayFields();
         foundWay(position);
         return;
       case w:
@@ -129,30 +133,59 @@ namespace AStar {
         return;
       case n:
         // normal field, start exploring the neighbour fields
-        currentWayFields.push([position, origin]);
+        addCurrentWayFields();
         exploreNeighbours();
         return;
       default:
         // error, should value should always be one of these four
         return;
+    }
 
-        function exploreNeighbours() {
-          const toExploreFields: Vector2d[] = [
-            { x: 1, y: 0 },
-            { x: 0, y: 1 },
-            { x: 1, y: 1 },
-            { x: -1, y: 0 },
-            { x: 0, y: -1 },
-            { x: -1, y: -1 },
-            { x: 1, y: -1 },
-            { x: -1, y: 1 },
-          ];
-          for (const n of toExploreFields)
-            exploreField(
-              { x: position.x + n.x, y: position.y + n.y },
-              position
-            );
+    function exploreNeighbours(): void {
+      const toExploreFields: Vector2d[] = [
+        { x: 1, y: 0 },
+        { x: 0, y: 1 },
+        { x: 1, y: 1 },
+        { x: -1, y: 0 },
+        { x: 0, y: -1 },
+        { x: -1, y: -1 },
+        { x: 1, y: -1 },
+        { x: -1, y: 1 },
+      ];
+      for (const n of toExploreFields)
+        exploreField(
+          { x: position.x + n.x, y: position.y + n.y },
+          position,
+          currentGCost
+        );
+    }
+
+    function addCurrentWayFields(): void {
+      // check if position is already in array
+      for (let i = 0; i < currentWayFields.length; ++i) {
+        const curPoint: Vector2d[] = currentWayFields[i];
+
+        if (curPoint[0].x === position.x && curPoint[1].y === position.y) {
+          // position is already in the array
+
+          // new way is slower
+          // new way is faster
+
+          return;
         }
+      }
+
+      // is not in the array so just add it
+      currentWayFields.push([
+        position,
+        origin,
+        { x: currentGCost.x + 1, y: 0 },
+      ]);
+    }
+
+    // position to end field
+    function calculateHCost(position: field): number {
+      return 0;
     }
   }
 
