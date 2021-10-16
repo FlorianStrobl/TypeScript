@@ -461,12 +461,8 @@ export namespace stringToPrimitive {
   }
 }
 
-const f = '{"test \\", whut  ok":false}';
-console.log(
-  stringToPrimitive.toObject(f),
-  getKVPairsUnsafe(f)
-  //f
-);
+console.log(Json.stringify({ test: 'test' }), JSON.stringify({ test: 'test' }));
+//console.log(Json.parse('"Hello World"'), JSON.parse('"Hello World"'));
 
 // TODO - everything
 export namespace jsonStringManipulation {
