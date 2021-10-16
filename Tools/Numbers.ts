@@ -766,10 +766,10 @@ export namespace NumberParser {
   }
 }
 
-console.log(NumberParser.stringToNumberParser('.5e+1'));
-console.log(NumberParser.numberToStringParser(5));
+//console.log(NumberParser.stringToNumberParser('.5e+1'));
+//console.log(NumberParser.numberToStringParser(5));
 
-console.log(BinaryNumbers.Integer.binaryStringToSInt('10'));
+//console.log(BinaryNumbers.Integer.binaryStringToSInt('10'));
 
 /*
 console.log(BinaryNumbers.Integer.sIntToBinaryString(0, 5));
