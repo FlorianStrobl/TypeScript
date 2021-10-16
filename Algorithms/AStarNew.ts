@@ -6,6 +6,7 @@ namespace AStar {
     x: field;
     y: field;
   }
+  const infinity: cost = 9999999999;
   // #endregion
 
   // #region number alias
@@ -23,16 +24,12 @@ namespace AStar {
   // #endregion
 
   // #region Field variables
+  const startField: Vector2d = { x: 4, y: 2 };
+  const endField: Vector2d = { x: 5, y: 7 };
   // settings of the field
   const fieldSettings: Vector2d[][] = [
-    [
-      { x: 4, y: 2 },
-      { x: s, y: -1 },
-    ],
-    [
-      { x: 5, y: 7 },
-      { x: e, y: -1 },
-    ],
+    [startField, { x: s, y: -1 }],
+    [endField, { x: e, y: -1 }],
   ];
 
   // the main field
@@ -112,14 +109,17 @@ namespace AStar {
     position: Vector2d,
     origin: Vector2d,
     currentGCost: Vector2d
-  ): void {
+  ): void | number {
     // value of the searched field
     const fieldValue: field = field[position.y][position.x];
+
+    //// check if already traversed and skip it if so
+    //if (opendFields.some((v) => v.x === x && v.y === y)) continue;
 
     switch (fieldValue) {
       case s:
         // returned to start, just ignore
-        return;
+        return infinity;
       case e:
         // found end and shortest path
         addCurrentWayFields();
@@ -127,10 +127,10 @@ namespace AStar {
         return;
       case w:
         // hit a wall, return
-        return;
+        return infinity;
       case sw:
         // hit a wall, return
-        return;
+        return infinity;
       case n:
         // normal field, start exploring the neighbour fields
         addCurrentWayFields();
@@ -138,7 +138,7 @@ namespace AStar {
         return;
       default:
         // error, should value should always be one of these four
-        return;
+        return infinity;
     }
 
     function exploreNeighbours(): void {
@@ -152,6 +152,7 @@ namespace AStar {
         { x: 1, y: -1 },
         { x: -1, y: 1 },
       ];
+      // TODO search for lowest gCost
       for (const n of toExploreFields)
         exploreField(
           { x: position.x + n.x, y: position.y + n.y },
@@ -183,9 +184,21 @@ namespace AStar {
       ]);
     }
 
-    // position to end field
-    function calculateHCost(position: field): number {
-      return 0;
+    // TODO
+    function calcPos1ToPos2Cost(
+      position1: Vector2d,
+      position2: Vector2d
+    ): cost {
+      // adjasond
+      if (position1.x === position2.x || position.y === position.y) return 10;
+      else return 14; // diagonal
+    }
+
+    // TODO position to end field
+    function calculateHCost(position: Vector2d): cost {
+      return (
+        Math.abs(position.x - endField.x) + Math.abs(position.y - endField.y)
+      );
     }
   }
 

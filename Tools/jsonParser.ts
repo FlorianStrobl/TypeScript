@@ -441,20 +441,32 @@ export namespace stringToPrimitive {
     return 0;
   }
 
-  // TODO
   export function toArray(ar: string): JSON[] {
     if (!isJsonString.isArray(ar))
       throw new Error(`${ar} is not a valid json array.`);
-    return [];
+    const values: JSON[] = [];
+    for (const str of getAllArrayValuesUnsafe(ar))
+      values.push(stringToPrimitive(str));
+    return values;
   }
 
-  // TODO
+  // TODO escaped characters
   export function toObject(obj: string): JsonObject {
     if (!isJsonString.isObject(obj))
       throw new Error(`${obj} is not a valid json object.`);
-    return {};
+    const values: JsonObject = {};
+    for (const [key, value] of getKVPairsUnsafe(obj))
+      values[key] = stringToPrimitive(value);
+    return values;
   }
 }
+
+const f = '{"test \\\\ whut  ok":false}';
+console.log(
+  stringToPrimitive.stringToPrimitive(f),
+  getTopLevelCommas(f.slice(1, f.length - 1)),
+  f
+);
 
 // TODO - everything
 export namespace jsonStringManipulation {
@@ -610,8 +622,8 @@ function getTopLevelCommas(text: string): string[] {
   let isSubstring: boolean = false;
   let lastCharWasEscape: boolean = false;
 
-  let squareBrackedCount: number = 0;
-  let curlyBrackedCount: number = 0;
+  let squareBracketCount: number = 0;
+  let curlyBracketCount: number = 0;
 
   let notPush: boolean; // saving current value to the values array
 
@@ -627,23 +639,25 @@ function getTopLevelCommas(text: string): string[] {
       }
     } else if (char === '"') isSubstring = true;
 
+    // #region brackets
     // if in array so not real ","
-    if (squareBrackedCount !== 0 && !isSubstring) {
-      if (char === '[') squareBrackedCount++;
-      else if (char === ']') squareBrackedCount--;
-    } else if (char === '[' && !isSubstring) squareBrackedCount++;
+    if (squareBracketCount !== 0 && !isSubstring) {
+      if (char === '[') squareBracketCount++;
+      else if (char === ']') squareBracketCount--;
+    } else if (char === '[' && !isSubstring) squareBracketCount++;
 
     // if in object so not real ","
-    if (curlyBrackedCount !== 0 && !isSubstring) {
-      if (char === '{') curlyBrackedCount++;
-      else if (char === '}') curlyBrackedCount--;
-    } else if (char === '{' && !isSubstring) curlyBrackedCount++;
+    if (curlyBracketCount !== 0 && !isSubstring) {
+      if (char === '{') curlyBracketCount++;
+      else if (char === '}') curlyBracketCount--;
+    } else if (char === '{' && !isSubstring) curlyBracketCount++;
+    // #endregion
 
     if (
       !notPush &&
       char === ',' &&
-      squareBrackedCount === 0 &&
-      curlyBrackedCount === 0
+      squareBracketCount === 0 &&
+      curlyBracketCount === 0
     ) {
       // new top level value
       values.push(curVal);
@@ -657,8 +671,11 @@ function getTopLevelCommas(text: string): string[] {
     else if (lastCharWasEscape) lastCharWasEscape = false;
   }
 
+  console.log('run', curVal);
+
   if (trimValueWhitespaces(curVal) !== '') values.push(curVal); // add last var or empty
   values = values.map((s) => trimValueWhitespaces(s)); // remove whitespaces for each value
+  console.log('run 2', values);
   return values;
 }
 // #endregion
