@@ -795,45 +795,40 @@ function stringNumberToNumber(
     if (exponentPart !== 0)
       if (exponentPart < 0) {
         // shift to the right
-        let shifts: string = '';
+        let intPartInFrac: string = '';
 
         // put the int part in the frac part, and edit int
         while (integerPart.length !== 0) {
           if (exponentPart === 0) break; // shifted enough
 
-          shifts = integerPart[integerPart.length - 1] + shifts; // put the end of the int in the shift var
+          intPartInFrac = integerPart[integerPart.length - 1] + intPartInFrac; // put the end of the int in the shift var
           integerPart = integerPart.slice(0, -1); // remove the last char
-          exponentPart++; // increase exp up to 0
+          ++exponentPart; // increase exp up to 0
         }
 
         // fill the rest with 0s (if int don't have enough numbers)
-        while (exponentPart < 0) {
-          shifts = '0' + shifts;
-          exponentPart++;
-        }
+        for (let i = exponentPart; i < 0; ++i)
+          intPartInFrac = '0' + intPartInFrac;
 
-        fractionPart = shifts + fractionPart; // give the frac the last part of int/the 0s
+        fractionPart = intPartInFrac + fractionPart; // give the frac the last part of int/the 0s
       } else {
-        // bigger than 0 so positive so shift to the left
-        let shiftsStr: string = '';
+        // bigger than 0, so positive, so shift to the left
+        let fracPartInInt: string = '';
 
         // put the start of frac at the end of the int part, + update frac
         while (fractionPart.length !== 0) {
           // frac has still digits so put them in the tmp var
           if (exponentPart === 0) break; // stop because the count of digits is now finish
 
-          shiftsStr += fractionPart[0]; // put the first char of frac to the end of int
+          fracPartInInt += fractionPart[0]; // put the first char of frac to the end of int
           fractionPart = fractionPart.slice(1); // remove first char
-          exponentPart--; // one digit finish
+          --exponentPart; // one digit finish
         }
 
         // fill the rest of the int part with 0s
-        while (exponentPart > 0) {
-          shiftsStr += '0'; // at the end a zero
-          exponentPart--;
-        }
+        for (let i = exponentPart; i > 0; --i) fracPartInInt += '0'; // at the end a zero
 
-        integerPart += shiftsStr; // put the shift in the int part
+        integerPart += fracPartInInt; // put the frac part in the int part
       }
 
     return {
@@ -931,7 +926,7 @@ const t = [
   '0.45536786846807972',
   '0.4553678684680797245',
 ];
-for (const s of t) console.log(s, Number(s), stringToPrimitive.toNumber(s));
+//for (const s of t) console.log(s, Number(s), stringToPrimitive.toNumber(s));
 
 const testString: string[] = [
   '0.78942874538795347',
@@ -941,10 +936,10 @@ const testString: string[] = [
 ];
 const f: number = 2;
 
-console.log(Number('0.99999999999999993'));
-console.log(Number(Number.MIN_VALUE.toString()));
-console.log(stringToPrimitive.toNumber('0.99999999999999993'));
-console.log(stringToPrimitive.toNumber(Number.MIN_VALUE.toString()));
+//console.log(Number('0.99999999999999993'));
+//console.log(Number(Number.MIN_VALUE.toString()));
+//console.log(stringToPrimitive.toNumber('0.99999999999999993'));
+//console.log(stringToPrimitive.toNumber(Number.MIN_VALUE.toString()));
 
 //console.log(Number(testString[f]), stringToPrimitive.toNumber(testString[f]));
 
