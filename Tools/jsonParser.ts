@@ -677,8 +677,7 @@ function stringNumberToNumber(
   errorInsteadOfNaN: boolean = false
 ): number {
   try {
-    if (!number.match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?([eE][\+-]?\d+)?$/))
-      throw new Error('Wrong input');
+    if (!number.match(isJsonNumberRegex)) throw new Error('Not a JSON number.');
 
     const parts: {
       int: string;
@@ -722,24 +721,27 @@ function stringNumberToNumber(
     sign: number;
     valid: boolean;
   } {
-    let intp: boolean = true;
-    let fracp: boolean = true;
-    let expp: boolean = true;
-
+    // the different parts of a number
     let ints: string = '';
     let fracs: string = '';
     let exps: string = '';
 
+    // checks in which part of the number we are
+    let intp: boolean = true;
+    let fracp: boolean = false;
+    let expp: boolean = false;
     for (let n of num) {
       if (n === '.') {
-        intp = false;
+        // in the fraction part
         fracp = true;
+        intp = false;
         expp = false;
         continue;
       } else if ('eE'.split('').some((c) => n === c)) {
+        // in the exponent part
+        expp = true;
         intp = false;
         fracp = false;
-        expp = true;
         continue;
       }
 
@@ -748,6 +750,7 @@ function stringNumberToNumber(
       else if (expp) exps += n;
     }
 
+    // exponent without leading zeros
     let _exp: string = removeLeadingZerosWMinus(exps);
 
     return {
@@ -758,12 +761,12 @@ function stringNumberToNumber(
       valid: ints !== '' || fracs !== '',
     };
 
+    // return sign + str without zeros
     function removeLeadingZerosWMinus(str: string): string {
-      let minus: string = '';
-      if (str.startsWith('-')) minus = '-';
-      str = removeLeadingSign(str);
-
-      return minus + removeLeadingZeros(str); // return sign + str without zeros
+      return (
+        (str.startsWith('-') ? '-' : '') +
+        removeLeadingZeros(removeLeadingSign(str))
+      );
     }
   }
 
