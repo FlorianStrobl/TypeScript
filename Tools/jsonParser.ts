@@ -770,9 +770,11 @@ function stringNumberToNumber(
   // "101" will be interpreted as "0.101"
   function binIntToFloat(number: string): number {
     const digits: string = '0123456789';
+    const digit = (char: string) => digits.indexOf(char);
+
     let ans: number = 0;
     for (let i = 0; i < number.length; ++i)
-      ans += digits.indexOf(number[i]) / Math.pow(10, i);
+      ans += digit(number[i]) / Math.pow(10, i);
     ans /= 10;
     return ans;
   }
@@ -881,9 +883,13 @@ function bin(float: number): string {
 
 // TODO
 const t = [
+  /*
+  '0.0',
   '0.1',
   '0.2',
   '0.3',
+  '0.9',
+  '1',
   '0.30000000000000004',
   '0.30000000000000009',
   '0.30000000000000010',
@@ -899,8 +905,19 @@ const t = [
   '0.30000000000000020',
   '0.30000000000000021',
   '0.78942874538795347',
+  '0.07892617895637856',
+  '0.76427890543798563',
+  '0.34216798543265437',
+  '0.12390854379843127',
+  '0.45536786846807972',
+  '0.65487598766374637',
+  */
+  '0.03142675474538745',
+  '0.0314267547453874587',
+  '0.45536786846807972',
+  '0.4553678684680797245',
 ];
-//for (const s of t) console.log(s, Number(s), stringToPrimitive.toNumber(s));
+for (const s of t) console.log(s, Number(s), stringToPrimitive.toNumber(s));
 
 const testString: string[] = [
   '0.78942874538795347',
@@ -909,13 +926,15 @@ const testString: string[] = [
 ];
 const f: number = 2;
 
-console.log(Number(testString[f]), stringToPrimitive.toNumber(testString[f]));
+//console.log(Number(testString[f]), stringToPrimitive.toNumber(testString[f]));
 
-console.log(binIntToFloat(testString[f].slice(2)));
+//console.log(binIntToFloat(testString[f].slice(2)));
 
 // "101" will be interpreted as "0.101"
 function binIntToFloat(number: string): number {
   const digits: string = '0123456789';
+  const digit = (char: string) => digits.indexOf(char);
+
   let ans: number = 0;
 
   for (let i = 0; i < number.length; ++i) {
@@ -924,10 +943,10 @@ function binIntToFloat(number: string): number {
     //ans += digits.indexOf(number[i]) * Math.pow(10, -(i + 1));
 
     // two lines
-    ans += digits.indexOf(number[i]) / Math.pow(10, i);
+    ans += digit(number[i]) / Math.pow(10, i - 1);
     //ans += digits.indexOf(number[i]) * Math.pow(10, -i);
   }
-  ans /= 10;
+  ans /= 100;
 
   return ans;
 }
