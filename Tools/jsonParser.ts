@@ -704,7 +704,7 @@ function stringNumberToNumber(
     if (values.int !== '') finalInt = uIntStringToNumber(values.int); // get the int part
 
     // convert the string fraction part (saved as a BigInt String) into a floating point part
-    finalFrac = binIntToFloat(values.frac);
+    finalFrac = intToFrac(values.frac);
 
     // return the value with the correct sign
     return parts.sign === 1 ? finalInt + finalFrac : -(finalInt + finalFrac);
@@ -770,15 +770,15 @@ function stringNumberToNumber(
     }
   }
 
-  // "101" will be interpreted as "0.101"
-  function binIntToFloat(number: string): number {
+  // "356266" will be interpreted as "0.356266"
+  function intToFrac(number: string): number {
     const digits: string = '0123456789';
     const digit = (char: string) => digits.indexOf(char);
     let ans: number = 0;
 
     for (let i = 0; i < number.length; ++i)
-      ans += digit(number[i]) / Math.pow(10, i);
-    ans /= 10;
+      ans += digit(number[i]) / Math.pow(10, i + 1);
+    //ans /= 10;
 
     return ans;
   }
@@ -930,11 +930,13 @@ const t = [
 
 const testString: string[] = [
   '0.78942874538795347',
+  '0.3',
+  '0.30000000000000004',
   '0.30000000000000015',
   '0.30000000000000019',
   '0.99999999999999999',
 ];
-const f: number = 2;
+const f: number = 1;
 
 //console.log(Number('0.99999999999999993'));
 //console.log(Number(Number.MIN_VALUE.toString()));
@@ -943,25 +945,24 @@ const f: number = 2;
 
 //console.log(Number(testString[f]), stringToPrimitive.toNumber(testString[f]));
 
-//console.log(binIntToFloat(testString[f].slice(2)));
+console.log(intToFrac(testString[f].slice(2)));
 
-// "101" will be interpreted as "0.101"
-function binIntToFloat(number: string): number {
+// "356266" will be interpreted as "0.356266"
+function intToFrac(number: string): number {
   const digits: string = '0123456789';
   const digit = (char: string) => digits.indexOf(char);
-
   let ans: number = 0;
 
   for (let i = 0; i < number.length; ++i) {
     // one line
-    //ans += digits.indexOf(number[i]) / Math.pow(10, i + 1);
+    ans += digit(number[i]) / Math.pow(10, i + 1);
     //ans += digits.indexOf(number[i]) * Math.pow(10, -(i + 1));
-
     // two lines
-    ans += digit(number[i]) / Math.pow(10, i - 1);
+    //ans += digit(number[i]) / Math.pow(10, i);
     //ans += digits.indexOf(number[i]) * Math.pow(10, -i);
   }
-  ans /= 100;
+  //ans /= 10;
+  //ans *= 0.1;
 
   return ans;
 }
