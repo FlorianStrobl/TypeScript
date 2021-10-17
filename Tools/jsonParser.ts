@@ -844,15 +844,18 @@ function stringNumberToNumber(
 
   function uIntStringToNumber(number: string): number {
     const digits: string = '0123456789';
+    const digit = (char: string) => digits.indexOf(char);
     const sign: number = number.startsWith('-') ? -1 : 1;
-    if (number.startsWith('-')) number = number.slice(1);
 
     // reverse the string for easier use
-    number = removeLeadingZeros(number).split('').reverse().join('');
+    number = removeLeadingZeros(removeLeadingSign(number))
+      .split('')
+      .reverse()
+      .join('');
 
     let ans: number = 0;
     for (let i = 0; i < number.length; ++i)
-      ans += digits.indexOf(number[i]) * Math.pow(10, i);
+      ans += digit(number[i]) * Math.pow(10, i);
 
     return ans * sign;
   }
@@ -867,9 +870,10 @@ function stringNumberToNumber(
     return string;
   }
 
-  function removeLeadingSign(str: string): string {
-    if (str.startsWith('-') || str.startsWith('+')) return str.slice(1);
-    else return str;
+  function removeLeadingSign(string: string): string {
+    return string.startsWith('-') || string.startsWith('+')
+      ? string.slice(1)
+      : string;
   }
 }
 // #endregion
