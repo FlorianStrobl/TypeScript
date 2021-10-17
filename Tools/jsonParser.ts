@@ -771,11 +771,12 @@ function stringNumberToNumber(
   function binIntToFloat(number: string): number {
     const digits: string = '0123456789';
     const digit = (char: string) => digits.indexOf(char);
-
     let ans: number = 0;
+
     for (let i = 0; i < number.length; ++i)
       ans += digit(number[i]) / Math.pow(10, i);
     ans /= 10;
+
     return ans;
   }
 
@@ -884,11 +885,17 @@ function bin(float: number): string {
 // TODO
 const t = [
   /*
+  Number.MAX_SAFE_INTEGER,
+  Number.MAX_VALUE,
+  Number.MIN_SAFE_INTEGER,
+  Number.MIN_VALUE,
+  Number.EPSILON,
   '0.0',
   '0.1',
   '0.2',
   '0.3',
   '0.9',
+  '0.99999999999999999',
   '1',
   '0.30000000000000004',
   '0.30000000000000009',
@@ -923,8 +930,14 @@ const testString: string[] = [
   '0.78942874538795347',
   '0.30000000000000015',
   '0.30000000000000019',
+  '0.99999999999999999',
 ];
 const f: number = 2;
+
+console.log(Number('0.99999999999999993'));
+console.log(Number(Number.MIN_VALUE.toString()));
+console.log(stringToPrimitive.toNumber('0.99999999999999993'));
+console.log(stringToPrimitive.toNumber(Number.MIN_VALUE.toString()));
 
 //console.log(Number(testString[f]), stringToPrimitive.toNumber(testString[f]));
 
