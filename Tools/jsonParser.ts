@@ -778,8 +778,9 @@ function stringNumberToNumber(
 
     for (let i = 0; i < number.length; ++i)
       ans += digit(number[i]) / Math.pow(10, i + 1);
-    //ans += digit(number[i]) * Math.pow(10, -i);
-    //ans /= 10;
+
+    //for (let i = number.length; i >= 0; --i)
+    //  ans += digit(number[i]) / Math.pow(10, i + 1);
 
     return ans;
   }
@@ -887,12 +888,11 @@ function bin(float: number): string {
 
 // TODO
 const t = [
-  //Number.MAX_SAFE_INTEGER.toString(),
-  //Number.MIN_SAFE_INTEGER.toString(),
-  //Number.MAX_VALUE.toString(),
-  //Number.MIN_VALUE.toString(),
-  //Number.EPSILON.toString(),
-  //'1',
+  Number.MAX_SAFE_INTEGER.toString(),
+  Number.MAX_VALUE.toString(),
+  Number.MIN_VALUE.toString(),
+  Number.EPSILON.toString(),
+  '1',
   '0.0',
   '0.1',
   '0.2',
@@ -925,73 +925,9 @@ const t = [
   '0.45536786846807972',
   '0.4553678684680797245',
 ];
-//for (const s of t)
-console
-  .log
-  //s,
-  //Number(s),
-  //intToFracDiv(s.slice(2)),
-  //intToFracDiv2(s.slice(2))
-  //intToFracMul(s.slice(2)),
-  //intToFracMul2(s.slice(2)),
-  //intToFracMul3(s.slice(2)),
-  ();
+for (const s of t) console.log(s, Number(s), stringToPrimitive.toNumber(s));
 
-const testString: string[] = [
-  '0.78942874538795347',
-  '0.3',
-  '0.30000000000000004',
-  '0.30000000000000015',
-  '0.30000000000000019',
-  '0.99999999999999999',
-];
-const f: number = 0;
-
-//console.log(Number('0.99999999999999993'));
-//console.log(Number(Number.MIN_VALUE.toString()));
-//console.log(stringToPrimitive.toNumber('0.99999999999999993'));
-//console.log(stringToPrimitive.toNumber(Number.MIN_VALUE.toString()));
-
-//console.log(Number(testString[f]), stringToPrimitive.toNumber(testString[f]));
-
-console.log(
-  intToFracDiv(testString[f].slice(2)),
-  Number(testString[f]),
-  0.78942874538795347
-);
-
-const t2 = [
-  '0.000000000000001',
-  '0.000000000000002',
-  '0.000000000000003',
-  '0.000000000000004',
-  '0.000000000000005',
-  '0.000000000000006',
-  '0.000000000000007',
-  '0.000000000000008',
-  '0.000000000000009',
-  '0.0000000000000001',
-  '0.0000000000000002',
-  '0.0000000000000003',
-  '0.0000000000000004',
-  '0.0000000000000005',
-  '0.0000000000000006',
-  '0.0000000000000007',
-  '0.0000000000000008',
-  '0.0000000000000009',
-  '0.00000000000000001',
-  '0.00000000000000002',
-  '0.00000000000000003',
-  '0.00000000000000004',
-  '0.00000000000000005',
-  '0.00000000000000006',
-  '0.00000000000000007',
-  '0.00000000000000008',
-  '0.00000000000000009',
-];
-//for (const s of t2)
-//console.log(Number(t2[0]), intToFracDiv(t2[0].slice(2)));
-
+// #region delete
 // "356266" will be interpreted as "0.356266"
 function intToFracDiv(number: string): number {
   const digits: string = '0123456789';
@@ -1009,7 +945,7 @@ function intToFracDivW(number: string): number {
   const digit = (char: string) => digits.indexOf(char);
   let ans: number = 0;
 
-  for (let i = number.length; i > 0; --i)
+  for (let i = number.length; i >= 0; --i)
     ans += digit(number[i]) / Math.pow(10, i + 1);
 
   return ans;
@@ -1074,3 +1010,4 @@ function intToFracMul3(number: string): number {
 
   return ans;
 }
+// #endregion
