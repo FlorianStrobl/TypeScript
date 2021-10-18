@@ -32,7 +32,7 @@ export namespace BinaryNumbers {
       return 0;
     }
 
-    export function IEEE754FloatToBinaryString(float: number): string {
+    export function FloatToBinaryString(float: number): string {
       if (typeof float !== 'number') throw new Error('Invalid input number');
 
       const buffer: ArrayBuffer = new ArrayBuffer(8);
@@ -43,8 +43,8 @@ export namespace BinaryNumbers {
       return ans;
     }
 
-    export function binaryStringToIEEE754Float(binaryString: string): number {
-      if (!IEEE754Bits.validIEEE754BinaryString(binaryString))
+    export function binaryStringToFloat(binaryString: string): number {
+      if (!Bits.validIEEE754BinaryString(binaryString))
         throw new Error(
           'Wrong bit count/input value for a IEEE754 double precision number.'
         );
@@ -71,7 +71,7 @@ export namespace BinaryNumbers {
       }
     }
 
-    export namespace IEEE754Bits {
+    export namespace Bits {
       export function validIEEE754BinaryString(binary: string): boolean {
         if (!binary.match(/^[01]{64}$/))
           throw new Error(
@@ -103,8 +103,7 @@ export namespace BinaryNumbers {
 
       export namespace GetBits {
         export function getSign(number: string | number): string {
-          if (typeof number === 'number')
-            number = IEEE754FloatToBinaryString(number);
+          if (typeof number === 'number') number = FloatToBinaryString(number);
 
           // check for invalid input
           validIEEE754BinaryString(number);
@@ -113,8 +112,7 @@ export namespace BinaryNumbers {
         }
 
         export function getExponent(number: string | number): string {
-          if (typeof number === 'number')
-            number = IEEE754FloatToBinaryString(number);
+          if (typeof number === 'number') number = FloatToBinaryString(number);
 
           // check for invalid input
           validIEEE754BinaryString(number);
@@ -123,8 +121,7 @@ export namespace BinaryNumbers {
         }
 
         export function getMantissa(number: string | number): string {
-          if (typeof number === 'number')
-            number = IEEE754FloatToBinaryString(number);
+          if (typeof number === 'number') number = FloatToBinaryString(number);
 
           // check for invalid input
           validIEEE754BinaryString(number);
@@ -141,7 +138,7 @@ export namespace BinaryNumbers {
           let outputString: boolean = true;
           if (typeof number === 'number') {
             // @ts-ignore
-            number = IEEE754FloatToBinaryString(number) as string;
+            number = FloatToBinaryString(number) as string;
             outputString = false;
           }
 
@@ -150,9 +147,7 @@ export namespace BinaryNumbers {
           if (!sign.match(/^[01]$/)) throw new Error('Invalid sign bit.');
 
           const answer: string = sign + number.slice(1);
-          return (
-            outputString ? answer : binaryStringToIEEE754Float(answer)
-          ) as T; // just remove the sign and add it
+          return (outputString ? answer : binaryStringToFloat(answer)) as T; // just remove the sign and add it
         }
 
         export function setExponent<T extends string | number>(
@@ -162,7 +157,7 @@ export namespace BinaryNumbers {
           let outputString: boolean = true;
           if (typeof number === 'number') {
             // @ts-ignore
-            number = IEEE754FloatToBinaryString(number) as string;
+            number = FloatToBinaryString(number) as string;
             outputString = false;
           }
 
@@ -172,9 +167,7 @@ export namespace BinaryNumbers {
             throw new Error('Invalid exponent bits.');
 
           const answer: string = number[0] + exponent + number.slice(12);
-          return (
-            outputString ? answer : binaryStringToIEEE754Float(answer)
-          ) as T;
+          return (outputString ? answer : binaryStringToFloat(answer)) as T;
         }
 
         export function setMantissa<T extends string | number>(
@@ -184,7 +177,7 @@ export namespace BinaryNumbers {
           let outputString: boolean = true;
           if (typeof number === 'number') {
             // @ts-ignore
-            number = IEEE754FloatToBinaryString(number) as string;
+            number = FloatToBinaryString(number) as string;
             outputString = false;
           }
 
@@ -194,9 +187,7 @@ export namespace BinaryNumbers {
             throw new Error('Invalid mantissa bits.');
 
           const answer: string = number[0] + number.slice(1, -52) + mantissa;
-          return (
-            outputString ? answer : binaryStringToIEEE754Float(answer)
-          ) as T;
+          return (outputString ? answer : binaryStringToFloat(answer)) as T;
         }
       }
 
@@ -325,10 +316,8 @@ export namespace BinaryNumbers {
         console.log('fliped', unsignedIntegerV);
 
         // add one
-        const dec: number = NumberParser.stringToNumberParser(
-          '0b' + unsignedIntegerV
-        );
-        unsignedIntegerV = NumberParser.numberToStringParser(dec + 1, 'bin');
+        const dec: number = Numbers.stringToNumber('0b' + unsignedIntegerV);
+        unsignedIntegerV = Numbers.numberToString(dec + 1, 'bin');
         // TODO check if works
         console.log('added one', unsignedIntegerV);
 
@@ -379,10 +368,8 @@ export namespace BinaryNumbers {
         }
 
         // add one
-        const dec: number = NumberParser.stringToNumberParser(
-          '0b' + binaryString
-        );
-        binaryString = NumberParser.numberToStringParser(dec + 1, 'bin');
+        const dec: number = Numbers.stringToNumber('0b' + binaryString);
+        binaryString = Numbers.numberToString(dec + 1, 'bin');
 
         // leading zeros
         while (binaryString.length < signBitIndex - 1)
@@ -398,7 +385,7 @@ export namespace BinaryNumbers {
   }
 }
 
-export namespace NumberParser {
+export namespace Numbers {
   const regexp: { [key: string]: RegExp } = {
     dec: /^(0[dD])?[\+-]?(\d)*(\.\d+)?([eEpP][\+-]?\d+)?$/,
     bin: /^(0[bB])[\+-]?[01]*(\.[01]+)?([eEpP][\+-]?\d+)?$/,
@@ -419,7 +406,7 @@ export namespace NumberParser {
    * @param nanInsteadOfError
    * @returns A 64 Bit Floating Point Number
    */
-  export function stringToNumberParser(
+  export function stringToNumber(
     number: string,
     nanInsteadOfError: boolean = false
   ): number {
@@ -472,20 +459,10 @@ export namespace NumberParser {
       let finalInt: number = 0; // the final integer part
       let finalFrac: number = 0; // the final fraction part
 
-      if (values.int !== '') finalInt = uIntStringToNumber(values.int, base); // get the int part
-
+      // get the int part
+      if (values.int !== '') finalInt = uIntStringToNumber(values.int, base);
       // get the fraction part
-      if (values.frac !== '')
-        //{
-        //let fracN: number = uIntStringToNumber(values.frac, base);
-        //const fracNLength: number = values.frac.length;
-
-        //for (let i = 0; i < fracNLength; ++i) fracN /= base; // shift the value to the right point place
-
-        //finalFrac = fracN; // add the frac part to the int part
-        //}
-        // convert the string fraction part (saved as a BigInt String) into a floating point part
-        finalFrac = intToFrac(values.frac, base);
+      if (values.frac !== '') finalFrac = intToFrac(values.frac, base);
 
       // return the value with the correct sign
       return parts.sign === 1 ? finalInt + finalFrac : -(finalInt + finalFrac); // return the value with the correct sign
@@ -497,53 +474,67 @@ export namespace NumberParser {
   }
 
   // TODO
-  export function numberToStringParser(
+  export function numberToString(
     number: number,
-    base: 'dec' | 'bin' | 'oct' | 'hex' = 'dec',
+    base: number | 'dec' | 'hex' | 'bin' | 'oct' = 10,
     mode: 'normalized' | 'exp' | 'no exp' = 'no exp'
   ): string {
     if (typeof number !== 'number') throw new Error('Invalid input.');
 
-    // special values
-    if (Number.isNaN(number)) return 'NaN';
-    else if (number === Infinity) return 'Infinity';
+    // check for default values (+-Inf, +-0, and NaN)
+    if (number === Infinity) return 'Infinity';
     else if (number === -Infinity) return '-Infinity';
+    else if (Number.isNaN(number)) return 'NaN';
     else if (Object.is(number, -0)) return '-0';
     else if (number === 0) return '0';
 
-    const sign: number =
-      BinaryNumbers.Floats.IEEE754Bits.GetBits.getSign(number) === '0' ? 1 : -1;
+    // do not worry about 0, since it is already out of question
+    const sign: number = Math.sign(number);
 
-    const _exponent: string =
-      BinaryNumbers.Floats.IEEE754Bits.GetBits.getExponent(number);
-    let exponent: number = stringToNumberParser('0b' + _exponent) - 1023;
-    if (exponent === -1023) exponent = -1022; // denormals
+    const _binExponent: string =
+      BinaryNumbers.Floats.Bits.GetBits.getExponent(number);
+    let binExponent: number = stringToNumber('0b' + _binExponent) - 1023;
+    // handle subnormals correctly
+    if (binExponent === -1023) binExponent = -1022;
 
-    let mantissa: string =
-      BinaryNumbers.Floats.IEEE754Bits.GetBits.getMantissa(number);
+    const mantissa: string =
+      BinaryNumbers.Floats.Bits.GetBits.getMantissa(number);
 
-    if (exponent === 0) {
+    let numberInBin: string = '';
+    if (binExponent === 0) {
       // no shift, just add the leading one
-      mantissa = '1.' + mantissa;
-    } else if (exponent < 0) {
-      // shift to the right
-      let leadingTrailingZeros: string = '0'.repeat(Math.abs(exponent) - 1);
-      // check for denormal
-      if (exponent === -1023) mantissa = '0.' + leadingTrailingZeros + mantissa;
-      else mantissa = '0.' + leadingTrailingZeros + '1' + mantissa;
+      numberInBin = '1.' + mantissa;
     } else {
-      // shift to the left
-      let leadingTrailingZeros: string = '0'.repeat(exponent - 1);
-      mantissa = '1' + mantissa + leadingTrailingZeros;
-      mantissa = insertAt(mantissa, '.', exponent + 1); // add komma
-      mantissa = removeTrailingZeros(mantissa) + '0'; // add trailing zero
+      const zeros: string = '0'.repeat(Math.abs(binExponent) - 1);
+      if (binExponent < 0) {
+        // shift to the right
+        // check for subnormal
+        if (binExponent === -1023) numberInBin = '0.' + zeros + mantissa;
+        else numberInBin = '0.' + zeros + '1' + mantissa;
+      } else {
+        // shift to the left
+        numberInBin = '1' + mantissa + zeros;
+        numberInBin = insertAt(numberInBin, '.', binExponent + 1); // add a comma
+      }
+    }
+    numberInBin = binRmLeadingZeros(binRmTrailingZerosAndDot(numberInBin));
+
+    return numberInBin;
+
+    function binRmTrailingZerosAndDot(s: string): string {
+      while (!!s.match(/^[01]*\.[01]*0$/) || !!s.match(/^[01]*\.$/))
+        s = s.slice(0, -1);
+      return s;
     }
 
-    // let trunced: number = Math.trunc(number);
-
-    return 'float';
+    function binRmLeadingZeros(s: string): string {
+      while (!!s.match(/^0[01.]+$/)) s = s.slice(1);
+      if (s.startsWith('.')) s = '0' + s;
+      return s;
+    }
   }
 
+  // #region private help functions
   // "x" will be interpreted as "0.x"
   function intToFrac(number: string, base: number): number {
     const digits: string = '0123456789abcdef';
@@ -705,6 +696,12 @@ export namespace NumberParser {
     return string;
   }
 
+  function removeTrailingDot(string: string): string {
+    while (string.endsWith('0') || string.endsWith('.'))
+      string = string.slice(0, -1);
+    return string;
+  }
+
   function removeLeadingSign(string: string): string {
     return ['+', '-'].some((s) => string.startsWith(s))
       ? string.slice(1)
@@ -714,12 +711,14 @@ export namespace NumberParser {
   function insertAt(string: string, char: string, index: number): string {
     return string.substring(0, index) + char + string.substring(index);
   }
+  // #endregion
 
   function generateRandomNumberString(digitsInTotal: number = 10): string {
     let randomNum: string = '0d';
 
     // sign
-    Math.random() < 0.5 ? (randomNum += '+') : (randomNum += '-');
+    const sign: string =
+      Math.random() < 0.5 ? (randomNum += '+') : (randomNum += '-');
 
     // digits
     for (let i = 0; i < digitsInTotal; ++i)
@@ -732,8 +731,6 @@ export namespace NumberParser {
     return randomNum;
   }
 }
-
-console.log(NumberParser.stringToNumberParser(''));
 
 //console.log(NumberParser.stringToNumberParser('.5e+1'));
 //console.log(NumberParser.numberToStringParser(5));
@@ -751,16 +748,9 @@ console.log(BinaryNumbers.Integer.sIntToBinaryString(-7, 5));
 console.log(BinaryNumbers.Integer.sIntToBinaryString(-6, 4));
 */
 
-function bin(float: number): string {
-  if (typeof float !== 'number') throw new Error('Invalid input number');
-
-  const buffer: ArrayBuffer = new ArrayBuffer(8);
-  new Float64Array(buffer)[0] = float;
-  let ans: string = new BigUint64Array(buffer)[0].toString(2); // convert it to binary, TODO toString()
-  while (ans.length < 64) ans = '0' + ans; // fill the start with leading zeros
-
-  return ans;
+const testNr: number[] = [1, 10, 0.1];
+for (const t of testNr) {
+  const ans: string = Numbers.numberToString(t);
+  const nm: number = Numbers.stringToNumber('0b' + ans);
+  console.log(t === nm, t, nm, ans);
 }
-
-console.log(bin(0.1 + 0.2));
-console.log((0.1 + 0.2).toString(), bin(Number((0.1 + 0.2).toString())));
