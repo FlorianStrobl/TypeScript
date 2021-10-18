@@ -709,6 +709,7 @@ function stringNumberToNumber(
     // return the value with the correct sign
     return parts.sign === 1 ? finalInt + finalFrac : -(finalInt + finalFrac);
   } catch (e) {
+    // Handle errors
     if (errorInsteadOfNaN) throw new Error(e);
     else return NaN;
   }
@@ -770,7 +771,7 @@ function stringNumberToNumber(
     }
   }
 
-  // "356266" will be interpreted as "0.356266"
+  // "x" will be interpreted as "0.x"
   function intToFrac(number: string): number {
     const digits: string = '0123456789';
     const digit = (char: string) => digits.indexOf(char);
@@ -865,7 +866,7 @@ function stringNumberToNumber(
   }
 
   function removeLeadingSign(string: string): string {
-    return string.startsWith('-') || string.startsWith('+')
+    return ['+', '-'].some((s) => string.startsWith(s))
       ? string.slice(1)
       : string;
   }
