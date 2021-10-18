@@ -20,6 +20,9 @@ const isJsonStringRegex: RegExp =
 
 // TODO Fix \r for spacing
 
+type whitespace = `${'' | ' ' | '\n' | '\r' | '\t'}`;
+type whitespaces = whitespace[];
+
 export namespace Json {
   export enum FormatMode {
     AddSpacesSimple,
@@ -39,10 +42,7 @@ export namespace Json {
    * @param space Adds indentation, white space, and line break characters to the return-value JSON text to make it easier to read.
    * @returns Returns a valid Json string.
    */
-  export function stringify(
-    value: JSON,
-    space: '' | ' ' | '\n' | '\r' | '\t' = ''
-  ): string {
+  export function stringify(value: JSON, space: whitespace = ''): string {
     return primitiveToString.primitiveToString(value, space);
   }
 
@@ -78,10 +78,22 @@ export namespace Json {
     }
   }
 
+  /**
+   * Check if a string is valid as a JSON string.
+   *
+   * @param text A string.
+   * @returns If the string is comform to the JSON standart.
+   */
   export function validation(text: string): boolean {
     return isJsonString.isJson(text);
   }
 
+  /**
+   * Check if JavaScript value can be stringified to a JSON string.
+   *
+   * @param value A JavaScript value, usually an object or array, as target to a JSON value.
+   * @returns If the value can be stringified to a JSON value.
+   */
   export function valueValidation(value: unknown): boolean {
     return isPrimitive.isPrimitive(value);
   }

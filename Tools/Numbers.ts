@@ -494,12 +494,8 @@ export namespace Numbers {
     const _binExponent: string =
       BinaryNumbers.Floats.Bits.GetBits.getExponent(number);
     let binExponent: number = stringToNumber('0b' + _binExponent) - 1023;
-    // handle subnormals correctly
-    let wasSubnormal: boolean = false;
-    if (binExponent === -1023) {
-      binExponent = -1022;
-      wasSubnormal = true;
-    }
+    // handle subnormals correctly, not updating to -1022 because of leading zero
+    let wasSubnormal: boolean = binExponent === -1023;
 
     const mantissa: string =
       BinaryNumbers.Floats.Bits.GetBits.getMantissa(number);
@@ -513,7 +509,7 @@ export namespace Numbers {
       if (binExponent < 0) {
         // shift to the right
         // check for subnormal, and add implicit 0
-        if (wasSubnormal) numberInBin = '0.' + zeros + '0' + mantissa;
+        if (wasSubnormal) numberInBin = '0.' + zeros + mantissa;
         else numberInBin = '0.' + zeros + '1' + mantissa;
       } else {
         // shift to the left
@@ -522,6 +518,8 @@ export namespace Numbers {
       }
     }
     numberInBin = binRmLeadingZeros(binRmTrailingZerosAndDot(numberInBin));
+
+    // TODO bin to base
 
     return numberInBin;
 
@@ -753,25 +751,13 @@ console.log(BinaryNumbers.Integer.sIntToBinaryString(-6, 4));
 */
 
 const testNr: number[] = [
-  1,
-  //10,
-  //0.1,
-  //Math.SQRT1_2,
-  //Number.EPSILON,
-  //Number.MAX_VALUE,
-  BinaryNumbers.Floats.Bits.SetBits.setMantissa(
-    0,
-    '0000000000000000000000000000000000000000000000000001'
-  ),
-  Number.MIN_VALUE,
+  100000000000000000000000,
+  0.00000000000000000000000000000000000000000000006,
+  NaN,
 ];
-console.log(
-  Numbers.numberToString(testNr[1]) === Numbers.numberToString(testNr[2])
-);
+
 for (const t of testNr) {
-  const ans: string = Numbers.numberToString(t);
-  try {
-    const nm: number = Numbers.stringToNumber('0b' + ans);
-    //console.log(t === nm, t, nm, ans);
-  } catch (e) {}
+  const ans: string = Numbers.numberToString(t, 10);
+  const nm: number = Numbers.stringToNumber('0b' + ans, true);
+  console.log(t === nm, t, nm, ans);
 }
