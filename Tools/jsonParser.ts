@@ -21,7 +21,7 @@ const isJsonStringRegex: RegExp =
 // TODO Fix \r for spacing
 
 type whitespace = `${'' | ' ' | '\n' | '\r' | '\t'}`;
-type whitespaces = whitespace[];
+type whitespaces = `${whitespace}${whitespace}${whitespace}${whitespace}`;
 
 export namespace Json {
   export enum FormatMode {
@@ -39,10 +39,12 @@ export namespace Json {
    * Converts a JavaScript value to a JavaScript Object Notation (JSON) string.
    *
    * @param value A JavaScript value, usually an object or array, to be converted.
-   * @param space Adds indentation, white space, and line break characters to the return-value JSON text to make it easier to read.
+   * @param space Adds indentation, white space, and line break characters to the return-value JSON text to make it easier to read. Up to four of these characters are allowed: " ", "\n", "\r", "\t".
    * @returns Returns a valid Json string.
    */
-  export function stringify(value: JSON, space: whitespace = ''): string {
+  export function stringify(value: JSON, space: whitespaces = ' '): string {
+    if (!space.match(/^(| |\n|\r|\t)(| |\n|\r|\t)(| |\n|\r|\t)(| |\n|\r|\t)$/))
+      throw new Error('Invalid spacing.');
     return primitiveToString.primitiveToString(value, space);
   }
 
@@ -301,10 +303,7 @@ export namespace isJsonString {
 
 // to number
 export namespace primitiveToString {
-  export function primitiveToString(
-    json: JSON,
-    space: '' | ' ' | '\n' | '\r' | '\t' = ''
-  ) {
+  export function primitiveToString(json: JSON, space: whitespaces = '') {
     if (isPrimitive.isNull(json)) return toNull(json);
     else if (isPrimitive.isBoolean(json)) return toBoolean(json);
     else if (isPrimitive.isString(json)) return toString(json);
@@ -357,10 +356,7 @@ export namespace primitiveToString {
     return ans;
   }
 
-  export function toArray(
-    ar: JSON[],
-    space: '' | ' ' | '\n' | '\r' | '\t' = ''
-  ): string {
+  export function toArray(ar: JSON[], space: whitespaces = ''): string {
     if (!isPrimitive.isArray(ar))
       throw new Error(`Array ${ar} is not a valid json array.`);
 
@@ -373,10 +369,7 @@ export namespace primitiveToString {
   }
 
   // TODO space
-  export function toObject(
-    obj: JsonObject,
-    space: '' | ' ' | '\n' | '\r' | '\t' = ''
-  ): string {
+  export function toObject(obj: JsonObject, space: whitespaces = ''): string {
     if (!isPrimitive.isObject(obj))
       throw new Error(`Object ${obj} is not a valid json object.`);
 
@@ -884,3 +877,5 @@ function stringNumberToNumber(
   }
 }
 // #endregion
+
+console.log(Json.stringify({ a: 'f' }, '\n\t'));
