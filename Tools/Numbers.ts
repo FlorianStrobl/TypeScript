@@ -512,8 +512,8 @@ export namespace Numbers {
       const zeros: string = '0'.repeat(Math.abs(binExponent) - 1);
       if (binExponent < 0) {
         // shift to the right
-        // check for subnormal
-        if (wasSubnormal) numberInBin = '0.' + zeros + mantissa;
+        // check for subnormal, and add implicit 0
+        if (wasSubnormal) numberInBin = '0.' + zeros + '0' + mantissa;
         else numberInBin = '0.' + zeros + '1' + mantissa;
       } else {
         // shift to the left
@@ -754,17 +754,24 @@ console.log(BinaryNumbers.Integer.sIntToBinaryString(-6, 4));
 
 const testNr: number[] = [
   1,
-  10,
-  0.1,
-  Math.SQRT1_2,
-  Number.EPSILON,
-  Number.MAX_VALUE,
+  //10,
+  //0.1,
+  //Math.SQRT1_2,
+  //Number.EPSILON,
+  //Number.MAX_VALUE,
+  BinaryNumbers.Floats.Bits.SetBits.setMantissa(
+    0,
+    '0000000000000000000000000000000000000000000000000001'
+  ),
   Number.MIN_VALUE,
 ];
+console.log(
+  Numbers.numberToString(testNr[1]) === Numbers.numberToString(testNr[2])
+);
 for (const t of testNr) {
   const ans: string = Numbers.numberToString(t);
   try {
     const nm: number = Numbers.stringToNumber('0b' + ans);
-    console.log(t === nm, t, nm, ans);
+    //console.log(t === nm, t, nm, ans);
   } catch (e) {}
 }
