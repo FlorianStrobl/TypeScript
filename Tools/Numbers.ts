@@ -495,7 +495,11 @@ export namespace Numbers {
       BinaryNumbers.Floats.Bits.GetBits.getExponent(number);
     let binExponent: number = stringToNumber('0b' + _binExponent) - 1023;
     // handle subnormals correctly
-    if (binExponent === -1023) binExponent = -1022;
+    let wasSubnormal: boolean = false;
+    if (binExponent === -1023) {
+      binExponent = -1022;
+      wasSubnormal = true;
+    }
 
     const mantissa: string =
       BinaryNumbers.Floats.Bits.GetBits.getMantissa(number);
@@ -509,7 +513,7 @@ export namespace Numbers {
       if (binExponent < 0) {
         // shift to the right
         // check for subnormal
-        if (binExponent === -1023) numberInBin = '0.' + zeros + mantissa;
+        if (wasSubnormal) numberInBin = '0.' + zeros + mantissa;
         else numberInBin = '0.' + zeros + '1' + mantissa;
       } else {
         // shift to the left
@@ -748,9 +752,19 @@ console.log(BinaryNumbers.Integer.sIntToBinaryString(-7, 5));
 console.log(BinaryNumbers.Integer.sIntToBinaryString(-6, 4));
 */
 
-const testNr: number[] = [1, 10, 0.1];
+const testNr: number[] = [
+  1,
+  10,
+  0.1,
+  Math.SQRT1_2,
+  Number.EPSILON,
+  Number.MAX_VALUE,
+  Number.MIN_VALUE,
+];
 for (const t of testNr) {
   const ans: string = Numbers.numberToString(t);
-  const nm: number = Numbers.stringToNumber('0b' + ans);
-  console.log(t === nm, t, nm, ans);
+  try {
+    const nm: number = Numbers.stringToNumber('0b' + ans);
+    console.log(t === nm, t, nm, ans);
+  } catch (e) {}
 }
