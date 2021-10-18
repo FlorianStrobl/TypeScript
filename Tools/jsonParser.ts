@@ -303,13 +303,19 @@ export namespace isJsonString {
 
 // to number
 export namespace primitiveToString {
-  export function primitiveToString(json: JSON, space: whitespaces = '') {
+  export function primitiveToString(
+    json: JSON,
+    space: whitespaces = '',
+    neastedInside: number = 1
+  ) {
     if (isPrimitive.isNull(json)) return toNull(json);
     else if (isPrimitive.isBoolean(json)) return toBoolean(json);
     else if (isPrimitive.isString(json)) return toString(json);
     else if (isPrimitive.isNumber(json)) return toNumber(json);
-    else if (isPrimitive.isArray(json)) return toArray(json, space);
-    else if (isPrimitive.isObject(json)) return toObject(json, space);
+    else if (isPrimitive.isArray(json))
+      return toArray(json, space, neastedInside);
+    else if (isPrimitive.isObject(json))
+      return toObject(json, space, neastedInside);
     else throw new Error(`${json} is not a valid json primitive.`);
   }
 
@@ -356,7 +362,11 @@ export namespace primitiveToString {
     return ans;
   }
 
-  export function toArray(ar: JSON[], space: whitespaces = ''): string {
+  export function toArray(
+    ar: JSON[],
+    space: whitespaces = '',
+    neastedInside: number = 1
+  ): string {
     if (!isPrimitive.isArray(ar))
       throw new Error(`Array ${ar} is not a valid json array.`);
 
@@ -378,7 +388,11 @@ export namespace primitiveToString {
   }
 
   // TODO space
-  export function toObject(obj: JsonObject, space: whitespaces = ''): string {
+  export function toObject(
+    obj: JsonObject,
+    space: whitespaces = '',
+    neastedInside: number = 1
+  ): string {
     if (!isPrimitive.isObject(obj))
       throw new Error(`Object ${obj} is not a valid json object.`);
 
@@ -386,7 +400,11 @@ export namespace primitiveToString {
       // unformated
       let ans: string = '{';
       for (const [k, v] of Object.entries(obj))
-        ans += toString(k) + ':' + primitiveToString(v, space) + ',';
+        ans +=
+          toString(k) +
+          ':' +
+          primitiveToString(v, space, neastedInside + 1) +
+          ',';
 
       ans = ans.length === 1 ? '{}' : removeChars(ans, 0, 1) + '}';
 
@@ -395,9 +413,21 @@ export namespace primitiveToString {
       // formatted string
       let ans: string = '{\n';
       for (const [k, v] of Object.entries(obj))
-        ans += space + toString(k) + ': ' + primitiveToString(v, space) + ',\n';
+        ans +=
+          space.repeat(neastedInside) +
+          toString(k) +
+          ': ' +
+          primitiveToString(v, space, neastedInside + 1) +
+          ',' +
+          '\n';
 
-      ans = ans.length === 1 ? '{}' : removeChars(ans, 0, 2) + '\n}';
+      ans =
+        ans.length === 1
+          ? '{}'
+          : removeChars(ans, 0, 2) +
+            '\n' +
+            space.repeat(neastedInside - 1) +
+            '}';
 
       return ans;
     }
@@ -903,10 +933,10 @@ const obj = {
   a: null,
   b: true,
   c: false,
-  d: 5e300,
-  e: 'Hello world !',
-  f: [null, false, 'Hi', 'what'],
-  g: { l: 'm', a: 'o' },
+  d: Number.MIN_VALUE,
+  e: 'Hello  world !',
+  //f: [null, false, 'Hi', 'what'],
+  g: { l: 'm', a: 'o', w: { t: 'f' } },
 };
 const ws = '  ';
 console.log(Json.stringify(obj, ws));
