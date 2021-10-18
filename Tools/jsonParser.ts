@@ -360,12 +360,21 @@ export namespace primitiveToString {
     if (!isPrimitive.isArray(ar))
       throw new Error(`Array ${ar} is not a valid json array.`);
 
-    let ans: string = '[';
-    for (const e of ar) ans += primitiveToString(e) + ',' + space;
+    if (space === '') {
+      // unformated
+      let ans: string = '[';
+      for (const e of ar) ans += space + primitiveToString(e, space) + ',';
+      ans = ans.length === 1 ? '[]' : removeChars(ans, 0, 1) + ']';
 
-    ans = ans.length === 1 ? '[]' : removeChars(ans, 0, space.length + 1) + ']';
+      return ans;
+    } else {
+      // formatted string
+      let ans: string = '[\n';
+      for (const e of ar) ans += space + primitiveToString(e, space) + ',\n';
+      ans = ans.length === 1 ? '[]' : removeChars(ans, 0, 2) + '\n]';
 
-    return ans;
+      return ans;
+    }
   }
 
   // TODO space
@@ -373,13 +382,25 @@ export namespace primitiveToString {
     if (!isPrimitive.isObject(obj))
       throw new Error(`Object ${obj} is not a valid json object.`);
 
-    let ans: string = '{';
-    for (const [k, v] of Object.entries(obj))
-      ans += toString(k) + ':' + primitiveToString(v) + ',' + space;
+    if (space === '') {
+      // unformated
+      let ans: string = '{';
+      for (const [k, v] of Object.entries(obj))
+        ans += toString(k) + ':' + primitiveToString(v, space) + ',';
 
-    ans = ans.length === 1 ? '{}' : removeChars(ans, 0, space.length + 1) + '}';
+      ans = ans.length === 1 ? '{}' : removeChars(ans, 0, 1) + '}';
 
-    return ans;
+      return ans;
+    } else {
+      // formatted string
+      let ans: string = '{\n';
+      for (const [k, v] of Object.entries(obj))
+        ans += space + toString(k) + ': ' + primitiveToString(v, space) + ',\n';
+
+      ans = ans.length === 1 ? '{}' : removeChars(ans, 0, 2) + '\n}';
+
+      return ans;
+    }
   }
 }
 
@@ -878,4 +899,16 @@ function stringNumberToNumber(
 }
 // #endregion
 
-console.log(Json.stringify({ a: 'f' }, '\n\t'));
+const obj = {
+  a: null,
+  b: true,
+  c: false,
+  d: 5e300,
+  e: 'Hello world !',
+  f: [null, false, 'Hi', 'what'],
+  g: { l: 'm', a: 'o' },
+};
+const ws = '  ';
+console.log(Json.stringify(obj, ws));
+console.log();
+console.log(JSON.stringify(obj, undefined, ws));
