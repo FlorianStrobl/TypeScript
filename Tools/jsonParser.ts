@@ -361,6 +361,7 @@ export namespace primitiveToString {
     return ans;
   }
 
+  // TODO space
   export function toArray(
     ar: JSON[],
     space: string = '',
@@ -372,15 +373,26 @@ export namespace primitiveToString {
     if (space === '') {
       // unformated
       let ans: string = '[';
-      for (const e of ar) ans += space + primitiveToString(e, space) + ',';
+      for (const e of ar)
+        ans += space + primitiveToString(e, space, neastedInside + 1) + ',';
       ans = ans.length === 1 ? '[]' : removeChars(ans, 0, 1) + ']';
 
       return ans;
     } else {
       // formatted string
       let ans: string = '[\n';
-      for (const e of ar) ans += space + primitiveToString(e, space) + ',\n';
-      ans = ans.length === 1 ? '[]' : removeChars(ans, 0, 2) + '\n]';
+      for (const e of ar)
+        ans +=
+          space.repeat(neastedInside) +
+          primitiveToString(e, space, neastedInside + 1) +
+          ',\n';
+      ans =
+        ans.length === 1
+          ? '[]'
+          : removeChars(ans, 0, 2) +
+            '\n' +
+            space.repeat(neastedInside - 1) +
+            ']';
 
       return ans;
     }
@@ -417,8 +429,7 @@ export namespace primitiveToString {
           toString(k) +
           ': ' +
           primitiveToString(v, space, neastedInside + 1) +
-          ',' +
-          '\n';
+          ',\n';
 
       ans =
         ans.length === 1
@@ -932,12 +943,12 @@ const obj = {
   a: null,
   b: true,
   c: false,
-  d: Number.MIN_VALUE ** (1 / 2),
+  //d: Number.MIN_VALUE ** (1 / 2),
   e: 'Hello  world !',
-  //f: [null, false, 'Hi', 'what'],
+  f: [null, false, 'Hi', 'what'],
   g: { l: 'm', a: 'o', w: { t: 'f' } },
 };
-const ws = 'mvfun85f24njvifmjo45iov  g4589rjei';
+const ws = ' ';
 console.log(Json.stringify(obj, ws));
 console.log();
 console.log(JSON.stringify(obj, undefined, ws));
