@@ -21,7 +21,6 @@ const isJsonStringRegex: RegExp =
 // TODO Fix \r for spacing
 
 type whitespace = `${'' | ' ' | '\n' | '\r' | '\t'}`;
-type whitespaces = `${whitespace}${whitespace}${whitespace}${whitespace}`;
 
 export namespace Json {
   export enum FormatMode {
@@ -42,9 +41,9 @@ export namespace Json {
    * @param space Adds indentation, white space, and line break characters to the return-value JSON text to make it easier to read. Up to four of these characters are allowed: " ", "\n", "\r", "\t".
    * @returns Returns a valid Json string.
    */
-  export function stringify(value: JSON, space: whitespaces = ' '): string {
-    if (!space.match(/^(| |\n|\r|\t)(| |\n|\r|\t)(| |\n|\r|\t)(| |\n|\r|\t)$/))
-      throw new Error('Invalid spacing.');
+  export function stringify(value: JSON, space: string = ' '): string {
+    //if (!space.match(/^(| |\n|\r|\t)*$/)) throw new Error('Invalid spacing.');
+    if (space.length > 10) space = space.slice(0, 10);
     return primitiveToString.primitiveToString(value, space);
   }
 
@@ -305,7 +304,7 @@ export namespace isJsonString {
 export namespace primitiveToString {
   export function primitiveToString(
     json: JSON,
-    space: whitespaces = '',
+    space: string = '',
     neastedInside: number = 1
   ) {
     if (isPrimitive.isNull(json)) return toNull(json);
@@ -364,7 +363,7 @@ export namespace primitiveToString {
 
   export function toArray(
     ar: JSON[],
-    space: whitespaces = '',
+    space: string = '',
     neastedInside: number = 1
   ): string {
     if (!isPrimitive.isArray(ar))
@@ -390,7 +389,7 @@ export namespace primitiveToString {
   // TODO space
   export function toObject(
     obj: JsonObject,
-    space: whitespaces = '',
+    space: string = '',
     neastedInside: number = 1
   ): string {
     if (!isPrimitive.isObject(obj))
@@ -933,12 +932,12 @@ const obj = {
   a: null,
   b: true,
   c: false,
-  d: Number.MIN_VALUE,
+  d: Number.MIN_VALUE ** (1 / 2),
   e: 'Hello  world !',
   //f: [null, false, 'Hi', 'what'],
   g: { l: 'm', a: 'o', w: { t: 'f' } },
 };
-const ws = '  ';
+const ws = 'mvfun85f24njvifmjo45iov  g4589rjei';
 console.log(Json.stringify(obj, ws));
 console.log();
 console.log(JSON.stringify(obj, undefined, ws));
