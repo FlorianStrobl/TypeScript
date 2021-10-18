@@ -778,6 +778,7 @@ function stringNumberToNumber(
 
     for (let i = 0; i < number.length; ++i)
       ans += digit(number[i]) / Math.pow(10, i + 1);
+    //ans += digit(number[i]) * Math.pow(10, -i);
     //ans /= 10;
 
     return ans;
@@ -886,19 +887,18 @@ function bin(float: number): string {
 
 // TODO
 const t = [
-  /*
-  Number.MAX_SAFE_INTEGER,
-  Number.MAX_VALUE,
-  Number.MIN_SAFE_INTEGER,
-  Number.MIN_VALUE,
-  Number.EPSILON,
+  //Number.MAX_SAFE_INTEGER.toString(),
+  //Number.MIN_SAFE_INTEGER.toString(),
+  //Number.MAX_VALUE.toString(),
+  //Number.MIN_VALUE.toString(),
+  //Number.EPSILON.toString(),
+  //'1',
   '0.0',
   '0.1',
   '0.2',
   '0.3',
   '0.9',
   '0.99999999999999999',
-  '1',
   '0.30000000000000004',
   '0.30000000000000009',
   '0.30000000000000010',
@@ -920,13 +920,20 @@ const t = [
   '0.12390854379843127',
   '0.45536786846807972',
   '0.65487598766374637',
-  */
   '0.03142675474538745',
   '0.0314267547453874587',
   '0.45536786846807972',
   '0.4553678684680797245',
 ];
-//for (const s of t) console.log(s, Number(s), stringToPrimitive.toNumber(s));
+for (const s of t)
+  console.log(
+    s,
+    Number(s),
+    intToFracDiv(s.slice(2)),
+    intToFracDiv2(s.slice(2)),
+    intToFracMul(s.slice(2)),
+    intToFracMul2(s.slice(2))
+  );
 
 const testString: string[] = [
   '0.78942874538795347',
@@ -945,24 +952,58 @@ const f: number = 1;
 
 //console.log(Number(testString[f]), stringToPrimitive.toNumber(testString[f]));
 
-console.log(intToFrac(testString[f].slice(2)));
+//console.log(intToFrac(testString[f].slice(2)));
 
 // "356266" will be interpreted as "0.356266"
-function intToFrac(number: string): number {
+function intToFracDiv(number: string): number {
+  const digits: string = '0123456789';
+  const digit = (char: string) => digits.indexOf(char);
+  let ans: number = 0;
+
+  for (let i = 0; i < number.length; ++i)
+    ans += digit(number[i]) / Math.pow(10, i + 1);
+
+  return ans;
+}
+
+function intToFracDiv2(number: string): number {
+  const digits: string = '0123456789';
+  const digit = (char: string) => digits.indexOf(char);
+  let ans: number = 0;
+
+  for (let i = 0; i < number.length; ++i)
+    ans += digit(number[i]) / Math.pow(10, i - 1);
+  ans /= 100;
+
+  return ans;
+}
+
+function intToFracMul(number: string): number {
+  const digits: string = '0123456789';
+  const digit = (char: string) => digits.indexOf(char);
+  let ans: number = 0;
+
+  for (let i = 0; i < number.length; ++i)
+    ans += digits.indexOf(number[i]) * Math.pow(10, -(i + 1));
+
+  return ans;
+}
+
+function intToFracMul2(number: string): number {
   const digits: string = '0123456789';
   const digit = (char: string) => digits.indexOf(char);
   let ans: number = 0;
 
   for (let i = 0; i < number.length; ++i) {
     // one line
-    ans += digit(number[i]) / Math.pow(10, i + 1);
-    //ans += digits.indexOf(number[i]) * Math.pow(10, -(i + 1));
+    //ans += digit(number[i]) / Math.pow(10, i + 1);
+    ans += digits.indexOf(number[i]) * Math.pow(10, -i);
     // two lines
     //ans += digit(number[i]) / Math.pow(10, i);
     //ans += digits.indexOf(number[i]) * Math.pow(10, -i);
   }
   //ans /= 10;
-  //ans *= 0.1;
+  ans *= 0.1;
 
   return ans;
 }
