@@ -513,7 +513,6 @@ export namespace stringToPrimitive {
     return stringNumberToNumber(n);
   }
 
-  // TODO escaped characters
   export function toArray(ar: string): JSON[] {
     if (!isJsonString.isArray(ar))
       throw new Error(`${ar} is not a valid json array.`);
@@ -523,7 +522,6 @@ export namespace stringToPrimitive {
     return values;
   }
 
-  // TODO keys without "" if possible
   export function toObject(obj: string): JsonObject {
     if (!isJsonString.isObject(obj))
       throw new Error(`${obj} is not a valid json object.`);
@@ -960,8 +958,35 @@ const obj = {
 };
 const obj2 = 'Hello \t\n\r \\\\" world!';
 const ws = ' ';
-const ans = Json.parse(Json.stringify(obj, ws));
-const ans2 = JSON.parse(JSON.stringify(obj, undefined, ws));
-console.log(ans);
-console.log(ans === ans2);
-console.log(ans2);
+const ans = Json.parse(Json.stringify(obj2, ws));
+const ans2 = JSON.parse(JSON.stringify(obj2, undefined, ws));
+//console.log(ans);
+//console.log(ans === ans2);
+//console.log(ans2);
+
+// "x" will be interpreted as "0.x"
+function intToFrac1(number: string): number {
+  const digits: string = '0123456789';
+  const digit = (char: string) => digits.indexOf(char);
+  let ans: number = 0;
+
+  for (let i = 0; i < number.length; ++i)
+    ans += digit(number[i]) / Math.pow(10, i + 1);
+
+  return ans;
+}
+
+//import * as N from 'Numbers';
+
+// "x" will be interpreted as "0.x"
+function intToFrac2(number: string): number {
+  //N.BinaryNumbers.Floats.
+  const digits: string = '0123456789';
+  const digit = (char: string) => digits.indexOf(char);
+  let ans: number = 0;
+
+  for (let i = 0; i < number.length; ++i)
+    ans += digit(number[i]) / Math.pow(10, i + 1);
+
+  return ans;
+}
