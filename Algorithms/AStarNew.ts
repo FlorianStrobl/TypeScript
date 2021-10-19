@@ -29,7 +29,7 @@ namespace AStar {
   // settings of the field
   const fieldSettings: Vector2d[][] = [
     [startField, { x: s, y: -1 }],
-    [endField, { x: e, y: -1 }],
+    [endField, { x: e, y: -1 }]
   ];
 
   // the main field
@@ -117,25 +117,21 @@ namespace AStar {
     //if (opendFields.some((v) => v.x === x && v.y === y)) continue;
 
     switch (fieldValue) {
-      case s:
-        // returned to start, just ignore
-        return infinity;
       case e:
         // found end and shortest path
         addCurrentWayFields();
         foundWay(position);
         return;
-      case w:
-        // hit a wall, return
-        return infinity;
-      case sw:
-        // hit a wall, return
-        return infinity;
       case n:
         // normal field, start exploring the neighbour fields
         addCurrentWayFields();
         exploreNeighbours();
         return;
+      // hit a wall, return
+      case w:
+      case sw:
+      // returned to start, just ignore
+      case s:
       default:
         // error, should value should always be one of these four
         return infinity;
@@ -150,7 +146,7 @@ namespace AStar {
         { x: 0, y: -1 },
         { x: -1, y: -1 },
         { x: 1, y: -1 },
-        { x: -1, y: 1 },
+        { x: -1, y: 1 }
       ];
       // TODO search for lowest gCost
       for (const n of toExploreFields)
@@ -180,7 +176,7 @@ namespace AStar {
       currentWayFields.push([
         position,
         origin,
-        { x: currentGCost.x + 1, y: 0 },
+        { x: currentGCost.x + 1, y: 0 }
       ]);
     }
 

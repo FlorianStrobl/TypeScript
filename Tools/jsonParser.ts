@@ -26,7 +26,7 @@ export namespace Json {
   export enum FormatMode {
     AddSpacesSimple,
     AddSpacesAdvanced,
-    RemoveSpaces,
+    RemoveSpaces
   }
 
   /**
@@ -41,10 +41,10 @@ export namespace Json {
    * @param space Adds indentation, white space, and line break characters to the return-value JSON text to make it easier to read. Up to four of these characters are allowed: " ", "\n", "\r", "\t".
    * @returns Returns a valid Json string.
    */
-  export function stringify(value: JSON, space: string = ' '): string {
+  export function stringify(value: JSON, space: string = ''): string {
     //if (!space.match(/^(| |\n|\r|\t)*$/)) throw new Error('Invalid spacing.');
     if (space.length > 10) space = space.slice(0, 10);
-    return primitiveToString.primitiveToString(value, space);
+    return primitiveToString.primitiveToString(value, space, 1);
   }
 
   /**
@@ -329,11 +329,17 @@ export namespace primitiveToString {
     return bool ? 'true' : 'false';
   }
 
+  // TODO escape characters
   export function toString(str: string): string {
     if (!isPrimitive.isString(str))
       throw new Error(`${str} is not a valid string.`);
+    // default escapes
     str = str.replaceAll(/\\/g, '\\\\');
     str = str.replaceAll(/"/g, '\\"');
+    // replace \n, \t, \r
+    str = str.replaceAll(/\t/g, '\\t');
+    str = str.replaceAll(/\n/g, '\\n');
+    str = str.replaceAll(/\r/g, '\\r');
     return '"' + str + '"';
   }
 
@@ -517,14 +523,18 @@ export namespace stringToPrimitive {
     return values;
   }
 
-  // TODO escaped characters
+  // TODO keys without "" if possible
   export function toObject(obj: string): JsonObject {
     if (!isJsonString.isObject(obj))
       throw new Error(`${obj} is not a valid json object.`);
     const values: JsonObject = {};
     for (const [key, value] of getKVPairsUnsafe(obj))
-      values[key] = stringToPrimitive(value);
+      values[stringKeyToKey(key)] = stringToPrimitive(value);
     return values;
+
+    function stringKeyToKey(key: string): string {
+      return removeChars(key, 1, 1);
+    }
   }
 }
 
@@ -825,7 +835,7 @@ function stringNumberToNumber(
       frac: removeTrailingZeros(fracs),
       exp: _exp === '-' ? '' : _exp,
       sign: ints.startsWith('-') ? -1 : 1,
-      valid: ints !== '' || fracs !== '',
+      valid: ints !== '' || fracs !== ''
     };
 
     // return sign + str without zeros
@@ -899,7 +909,7 @@ function stringNumberToNumber(
 
     return {
       int: removeLeadingZeros(integerPart),
-      frac: removeTrailingZeros(fractionPart),
+      frac: removeTrailingZeros(fractionPart)
     };
   }
 
@@ -944,11 +954,14 @@ const obj = {
   b: true,
   c: false,
   //d: Number.MIN_VALUE ** (1 / 2),
-  e: 'Hello  world !',
-  f: [null, false, 'Hi', 'what'],
-  g: { l: 'm', a: 'o', w: { t: 'f' } },
+  'e e': 'Hello  world !'
+  //f: [null, false, 'Hi', 'what'],
+  //g: { l: 'm', a: 'o', w: { t: 'f' } },
 };
+const obj2 = 'Hello \t\n\r \\\\" world!';
 const ws = ' ';
-console.log(Json.stringify(obj, ws));
-console.log();
-console.log(JSON.stringify(obj, undefined, ws));
+const ans = Json.parse(Json.stringify(obj, ws));
+const ans2 = JSON.parse(JSON.stringify(obj, undefined, ws));
+console.log(ans);
+console.log(ans === ans2);
+console.log(ans2);
