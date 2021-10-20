@@ -9,6 +9,11 @@ namespace AStar {
   const infinity: cost = 9999999999;
   // #endregion
 
+  // #region length of the field
+  const fieldXLength: number = 19;
+  const fieldYLength: number = 10;
+  // #endregion
+
   // #region number alias
   const n: field = 0; // nothing
   const s: field = 1; // start point number
@@ -16,11 +21,6 @@ namespace AStar {
   const w: field = 3; // wall number
   const sw: field = 4; // small wall number (walls where you shouldn't be, but can)
   const p: field = -1; // path number
-  // #endregion
-
-  // #region length of the field
-  const fieldXLength: number = 19;
-  const fieldYLength: number = 10;
   // #endregion
 
   // #region Field variables
@@ -77,7 +77,7 @@ namespace AStar {
       for (const value of preValues) {
         let coords: Vector2d = value[0]; // coords for the value
         let num: field = value[1].x; // value for the field
-        newField[coords.x][coords.y] = num;
+        newField[coords.y][coords.x] = num;
       }
 
     return newField;
@@ -106,7 +106,15 @@ namespace AStar {
 
   // #region a star solve functions
   function solveMaze(): void {
-    const ans: number = exploreField(startField, startField, { x: 0, y: -1 })!;
+    const ans: number | undefined = exploreField(startField, startField, {
+      x: 0,
+      y: -1
+    });
+    if (ans === undefined) {
+      console.log('No way found!');
+    } else {
+      console.log('Found way!');
+    }
   }
 
   function exploreField(
@@ -125,12 +133,22 @@ namespace AStar {
         // found end and shortest path
         addCurrentWayFields();
         foundWay(position);
-        return;
+        return undefined;
       case n:
         // normal field, start exploring the neighbour fields
         addCurrentWayFields();
-        exploreNeighbours();
-        return;
+        const bestNeighbourField: Vector2d = exploreNeighbours();
+        if (bestNeighbourField.x === -1) {
+          return undefined;
+        }
+        // TODO, GCost
+        else
+          exploreField(bestNeighbourField, position, {
+            x: currentGCost.x + 1,
+            y: -1
+          });
+        // TODO, if way found, return 1
+        return 1;
       // hit a wall, return
       case w:
       case sw:
@@ -153,22 +171,29 @@ namespace AStar {
         { x: 1, y: -1 },
         { x: -1, y: 1 }
       ];
+
       // TODO search for lowest gCost
-      let fieldCosts: cost[] = [];
+      let cheapestField: Vector2d = { x: -1, y: -1 };
+      let cheapestFieldCost: cost = infinity;
       for (const fd of toExploreFields) {
         const fieldVal: field = field[fd.y][fd.x];
         if (fieldVal === e) {
           // found end, return this
-        } else if (fieldVal === n)
-          fieldCosts.push(
-            getGCost({ x: position.x + fd.x, y: position.y + fd.y }) +
-              getHCost({ x: position.x + fd.x, y: position.y + fd.y })
-          );
+          return { x: position.x + fd.x, y: position.y + fd.y };
+        } else if (fieldVal === n) {
+          const fieldCost: number =
+            currentGCost.x +
+            1 +
+            calculateHCost({ x: position.x + fd.x, y: position.y + fd.y });
+          if (fieldCost < cheapestFieldCost) cheapestField = fd;
+        }
       }
-      // TODO, find the real best cost thing
-      const shortestPath: Vector2d =
-        toExploreFields[fieldCosts.indexOf(fieldCosts.sort()[1])];
-      return { x: position.x + shortestPath.x, y: position.y + shortestPath.y };
+      // no best way found, because there is no other way
+      if (cheapestField.x === -1) return cheapestField;
+      return {
+        x: position.x + cheapestField.x,
+        y: position.y + cheapestField.y
+      };
     }
 
     function addCurrentWayFields(): void {
