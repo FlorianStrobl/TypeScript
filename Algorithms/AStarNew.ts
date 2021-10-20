@@ -105,11 +105,15 @@ namespace AStar {
   // #endregion
 
   // #region a star solve functions
+  function solveMaze(): void {
+    const ans: number = exploreField(startField, startField, { x: 0, y: -1 })!;
+  }
+
   function exploreField(
     position: Vector2d,
     origin: Vector2d,
     currentGCost: Vector2d
-  ): void | number {
+  ): undefined | number {
     // value of the searched field
     const fieldValue: field = field[position.y][position.x];
 
@@ -137,7 +141,8 @@ namespace AStar {
         return infinity;
     }
 
-    function exploreNeighbours(): void {
+    // find the best neighbour
+    function exploreNeighbours(): Vector2d {
       const toExploreFields: Vector2d[] = [
         { x: 1, y: 0 },
         { x: 0, y: 1 },
@@ -149,12 +154,21 @@ namespace AStar {
         { x: -1, y: 1 }
       ];
       // TODO search for lowest gCost
-      for (const n of toExploreFields)
-        exploreField(
-          { x: position.x + n.x, y: position.y + n.y },
-          position,
-          currentGCost
-        );
+      let fieldCosts: cost[] = [];
+      for (const fd of toExploreFields) {
+        const fieldVal: field = field[fd.y][fd.x];
+        if (fieldVal === e) {
+          // found end, return this
+        } else if (fieldVal === n)
+          fieldCosts.push(
+            getGCost({ x: position.x + fd.x, y: position.y + fd.y }) +
+              getHCost({ x: position.x + fd.x, y: position.y + fd.y })
+          );
+      }
+      // TODO, find the real best cost thing
+      const shortestPath: Vector2d =
+        toExploreFields[fieldCosts.indexOf(fieldCosts.sort()[1])];
+      return { x: position.x + shortestPath.x, y: position.y + shortestPath.y };
     }
 
     function addCurrentWayFields(): void {

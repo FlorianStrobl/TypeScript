@@ -18,15 +18,17 @@ const isJsonStringRegex: RegExp =
   /^"(\\"|\\\\|\\\/|\\b|\\f|\\n|\\r|\\t|\\[0-9a-fA-F]{4}|[^"\\])*"$/;
 // #endregion
 
-// TODO Fix \r for spacing
+// TODO Fix \r or \n for spacing, e.g. only every element on new line
 
 type whitespace = `${'' | ' ' | '\n' | '\r' | '\t'}`;
 
 export namespace Json {
-  export enum FormatMode {
-    AddSpacesSimple,
-    AddSpacesAdvanced,
-    RemoveSpaces
+  export const enum FormatMode {
+    NoSpace = '',
+    DoubleSpace = '  ',
+    Tab = '\t',
+    NewLine = '\r',
+    CarriageReturn = '\r'
   }
 
   /**
@@ -57,25 +59,23 @@ export namespace Json {
     return stringToPrimitive.stringToPrimitive(text) as T;
   }
 
-  export function prettify(text: string, format: FormatMode): string {
-    // TODO could have many spaces
-    let ans: string = '';
-    if (format === FormatMode.AddSpacesSimple) ans = addSpacesSimple(text);
-    if (format === FormatMode.AddSpacesAdvanced) ans = addSpacesAdvanced(text);
-    if (format === FormatMode.RemoveSpaces) ans = removeSpaces(text);
-
-    return ans;
-
-    function removeSpaces(str: string): string {
-      return '';
-    }
-
-    function addSpacesSimple(str: string): string {
-      return '';
-    }
-
-    function addSpacesAdvanced(str: string): string {
-      return '';
+  export function prettify(
+    text: string,
+    format: FormatMode | '' | '  ' | '\t' | '\n' | '\r'
+  ): string {
+    if (format === '\n') format = '\r';
+    const data: JSON = parse(text);
+    switch (format) {
+      case FormatMode.NoSpace:
+        return stringify(data, '');
+      case FormatMode.DoubleSpace:
+        return stringify(data, '  ');
+      case FormatMode.Tab:
+        return stringify(data, '\t');
+      case FormatMode.NewLine:
+        return stringify(data, '\r');
+      case FormatMode.CarriageReturn:
+        return stringify(data, '\r');
     }
   }
 
@@ -963,6 +963,8 @@ const ans2 = JSON.parse(JSON.stringify(obj2, undefined, ws));
 //console.log(ans);
 //console.log(ans === ans2);
 //console.log(ans2);
+
+console.log(Json.prettify(Json.stringify(obj, '  '), Json.FormatMode.NewLine));
 
 // "x" will be interpreted as "0.x"
 function intToFrac1(number: string): number {
