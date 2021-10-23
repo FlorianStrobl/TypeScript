@@ -1,3 +1,20 @@
+/**
+ * NxM field with:
+ *  - 1x start field
+ *  - 1x end field
+ *  - Ax wall fields
+ *  - Bx transparent wall fields
+ *
+ * Goal: find shortest way from start field (s) to end field (e),
+ * without crashing into walls.
+ * Start field can be inside a transparent wall.
+ *
+ * Every field gets a G and a H cost, which combined are called C cost.
+ * G cost: cost from starting field to current field
+ * H cost: cost from current field to end field
+ * C cost: G cost + H cost
+ */
+
 namespace AStar {
   // #region types
   type cost = number;
@@ -6,7 +23,6 @@ namespace AStar {
     x: field;
     y: field;
   }
-  const infinity: cost = 9999999999;
   // #endregion
 
   // #region length of the field
@@ -15,6 +31,8 @@ namespace AStar {
   // #endregion
 
   // #region number alias
+  const infinity: cost = 9999999999;
+
   const n: field = 0; // nothing
   const s: field = 1; // start point number
   const e: field = 2; // end end number
@@ -105,11 +123,16 @@ namespace AStar {
   // #endregion
 
   // #region a star solve functions
-  function solveMaze(): void {
-    const ans: number | undefined = exploreField(startField, startField, {
-      x: 0,
-      y: -1
-    });
+  export function solveMaze(): void {
+    const ans: Vector2d | undefined = cheapestNearField(
+      startField,
+      startField,
+      {
+        x: 0,
+        y: -1
+      }
+    );
+
     if (ans === undefined) {
       console.log('No way found!');
     } else {
@@ -117,11 +140,11 @@ namespace AStar {
     }
   }
 
-  function exploreField(
+  function cheapestNearField(
     position: Vector2d,
     origin: Vector2d,
     currentGCost: Vector2d
-  ): undefined | number {
+  ): undefined | Vector2d {
     // value of the searched field
     const fieldValue: field = field[position.y][position.x];
 
@@ -133,22 +156,19 @@ namespace AStar {
         // found end and shortest path
         addCurrentWayFields();
         foundWay(position);
-        return undefined;
+        return position;
       case n:
         // normal field, start exploring the neighbour fields
         addCurrentWayFields();
         const bestNeighbourField: Vector2d = exploreNeighbours();
-        if (bestNeighbourField.x === -1) {
-          return undefined;
-        }
+        if (bestNeighbourField.x === -1) return undefined;
         // TODO, GCost
         else
-          exploreField(bestNeighbourField, position, {
-            x: currentGCost.x + 1,
+          return cheapestNearField(bestNeighbourField, position, {
+            x:
+              calcPos1ToPos2Cost(bestNeighbourField, position) + currentGCost.x,
             y: -1
           });
-        // TODO, if way found, return 1
-        return 1;
       // hit a wall, return
       case w:
       case sw:
@@ -156,7 +176,7 @@ namespace AStar {
       case s:
       default:
         // error, should value should always be one of these four
-        return infinity;
+        return undefined;
     }
 
     // find the best neighbour
@@ -244,4 +264,5 @@ namespace AStar {
 }
 
 console.log(AStar.showField());
-console.log(AStar.showField(AStar.hCost));
+//console.log(AStar.showField(AStar.hCost));
+AStar.solveMaze();
