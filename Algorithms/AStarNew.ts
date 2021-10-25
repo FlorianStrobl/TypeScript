@@ -1,18 +1,30 @@
 /**
  * NxM field with:
- *  - 1x start field
- *  - 1x end field
- *  - Ax wall fields
- *  - Bx transparent wall fields
+ *  - 1x start field (s)
+ *  - 1x end field (e)
+ *  - Ax wall fields (w)
+ *  - Bx transparent wall fields (sw)
  *
  * Goal: find shortest way from start field (s) to end field (e),
  * without crashing into walls.
  * Start field can be inside a transparent wall.
  *
- * Every field gets a G and a H cost, which combined are called C cost.
+ * Every field gets a G and a H cost, which combined is called F cost.
  * G cost: cost from starting field to current field
- * H cost: cost from current field to end field
- * C cost: G cost + H cost
+ * H cost: cost from current field to end field (heuristic, only an approximation)
+ * F cost: G cost + H cost
+ *
+ * The algorithm starts with a field/node and calculates
+ * for all traversable fields (e and n fields) around it their G and H cost.
+ * The costs and the field from which we started get saved to
+ * each field individualy. If the total cost of a field
+ * was already saved with different values before,
+ * it will overwrite it if the new F cost is smaller than the old F cost.
+ * This field gets marked as explored/traversed.
+ *
+ * It gets the non explored node with the lowest F cost and combines it with the previous node
+ * in a new graph. If the field was already combined with a node,
+ * it will combine it if and only if it is more cost efficient.
  */
 
 namespace AStar {
@@ -22,6 +34,13 @@ namespace AStar {
   interface Vector2d {
     x: field;
     y: field;
+  }
+  interface Field {
+    coords: Vector2d;
+    hCost: cost;
+    gCost: cost;
+    originCoords: Vector2d;
+    explored: boolean;
   }
   // #endregion
 
@@ -51,11 +70,14 @@ namespace AStar {
   ];
 
   // the main field
-  export const field: field[][] = generateGameField(
+  export const mainField: field[][] = generateGameField(
     fieldXLength,
     fieldYLength,
     fieldSettings
   );
+
+  export const workField: (null | Field)[] = [];
+  for (let i = 0; i < fieldXLength + fieldYLength; ++i) workField.push(null);
 
   // #region costs and way
   // way cost from start field to current field
@@ -102,7 +124,7 @@ namespace AStar {
   }
 
   export function showField(
-    _field: field[][] = field,
+    _field: field[][] = mainField,
     XLength: number = fieldXLength,
     YLength: number = fieldYLength
   ): string {
@@ -146,7 +168,7 @@ namespace AStar {
     currentGCost: Vector2d
   ): undefined | Vector2d {
     // value of the searched field
-    const fieldValue: field = field[position.y][position.x];
+    const fieldValue: field = mainField[position.y][position.x];
 
     //// check if already traversed and skip it if so
     //if (opendFields.some((v) => v.x === x && v.y === y)) continue;
@@ -196,7 +218,7 @@ namespace AStar {
       let cheapestField: Vector2d = { x: -1, y: -1 };
       let cheapestFieldCost: cost = infinity;
       for (const fd of toExploreFields) {
-        const fieldVal: field = field[fd.y][fd.x];
+        const fieldVal: field = mainField[fd.y][fd.x];
         if (fieldVal === e) {
           // found end, return this
           return { x: position.x + fd.x, y: position.y + fd.y };
@@ -254,6 +276,39 @@ namespace AStar {
       return (
         Math.abs(position.x - endField.x) + Math.abs(position.y - endField.y)
       );
+    }
+  }
+
+  function test(f: Vector2d) {
+    function neightbourFiels(x: Vector2d): void {
+      const toExploreFields: Vector2d[] = [
+        { x: 1, y: 0 },
+        { x: 0, y: 1 },
+        { x: 1, y: 1 },
+        { x: -1, y: 0 },
+        { x: 0, y: -1 },
+        { x: -1, y: -1 },
+        { x: 1, y: -1 },
+        { x: -1, y: 1 }
+      ];
+
+      for (const nF of toExploreFields) {
+        // value of current field
+        const fieldValue: field = mainField[x.x + nF.x][x.y + nF.y];
+        // infos of current field
+        const fieldInfos: Field | null =
+          workField[(x.y + nF.y) * fieldXLength + (x.x + nF.x)];
+        
+        if (fieldInfos === null || fieldInfos.gCost + fieldInfos.hCost < 0) {
+          workField[(x.y + nF.y) * fieldXLength + (x.x + nF.x)] = {
+            coords: nF,
+            originCoords: x,
+            explored: true,
+            gCost: 0,
+            hCost: 0
+          };
+        }
+      }
     }
   }
 
