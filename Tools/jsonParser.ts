@@ -243,7 +243,7 @@ export namespace isJsonString {
     return true;
   }
 
-  // TODO only is int todo
+  // TODO only is int
   export namespace SpecialSearches {
     // TODO
     export function isInteger(n: string): boolean {
@@ -329,7 +329,7 @@ export namespace primitiveToString {
     return bool ? 'true' : 'false';
   }
 
-  // TODO escape characters
+  // TODO escape characters \uDDDD
   export function toString(str: string): string {
     if (!isPrimitive.isString(str))
       throw new Error(`${str} is not a valid string.`);
