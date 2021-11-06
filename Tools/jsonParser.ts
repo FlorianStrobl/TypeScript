@@ -23,14 +23,6 @@ const isJsonStringRegex: RegExp =
 type whitespace = `${'' | ' ' | '\n' | '\r' | '\t'}`;
 
 export namespace Json {
-  export const enum FormatMode {
-    NoSpace = '',
-    DoubleSpace = '  ',
-    Tab = '\t',
-    NewLine = '\r',
-    CarriageReturn = '\r'
-  }
-
   /**
    * @param replacer A function that transforms the results.
    * @param replacer An array of strings and numbers that acts as an approved list for selecting the object properties that will be stringified.
@@ -40,7 +32,8 @@ export namespace Json {
    * Converts a JavaScript value to a JavaScript Object Notation (JSON) string.
    *
    * @param value A JavaScript value, usually an object or array, to be converted.
-   * @param space Adds indentation, white space, and line break characters to the return-value JSON text to make it easier to read. Up to four of these characters are allowed: " ", "\n", "\r", "\t".
+   * @param space Adds indentation, white space, and line break characters to the return-value JSON text to make it easier to read.
+   * Up to four of these characters are allowed: " ", "\n", "\r", "\t".
    * @returns Returns a valid Json string.
    */
   export function stringify(value: JSON, space: string = ''): string {
@@ -97,6 +90,14 @@ export namespace Json {
    */
   export function valueValidation(value: unknown): boolean {
     return isPrimitive.isPrimitive(value);
+  }
+
+  export const enum FormatMode {
+    NoSpace = '',
+    DoubleSpace = '  ',
+    Tab = '\t',
+    NewLine = '\r',
+    CarriageReturn = '\r'
   }
 }
 
@@ -992,3 +993,10 @@ function intToFrac2(number: string): number {
 
   return ans;
 }
+
+console.log(
+  JSON.stringify({ test: '1', what: 2 }, (key, value) => {
+    console.log('key: ' + key, 'value: ' + value);
+    return value;
+  })
+);
