@@ -36,6 +36,7 @@ namespace AStar {
     y: field;
   }
   interface Field {
+    value: field;
     coords: Vector2d;
     hCost: cost;
     gCost: cost;
@@ -67,6 +68,21 @@ namespace AStar {
     [startField, { x: s, y: -1 }],
     [endField, { x: e, y: -1 }]
   ];
+
+  export const fields: Field[][] = [];
+  for (let y = 0; y < fieldYLength; ++y) {
+    fields.push([]);
+    for (let x = 0; x < fieldXLength; ++x) {
+      fields[y].push({
+        coords: { x: x, y: y },
+        value: 0,
+        hCost: infinity,
+        gCost: infinity,
+        originCoords: { x: -1, y: -1 },
+        explored: false
+      });
+    }
+  }
 
   // the main field
   export const mainField: field[][] = generateGameField(
@@ -304,7 +320,8 @@ namespace AStar {
             originCoords: x,
             explored: true,
             gCost: 0,
-            hCost: 0
+            hCost: 0,
+            value: fieldValue
           };
         }
       }
@@ -317,18 +334,15 @@ namespace AStar {
   // #endregion
 
   export function aStarSolve(): void {
-    expFlds(startField, startField, { x: 0, y: -1 });
-    while (true) {
-      const cheapestField: Vector2d = searchCheapestField();
-      if (expFlds(cheapestField, cheapestField, { x: 0, y: -1 })) break;
-    }
+    expFlds(startField);
+
+    //while (true) {
+    //  const cheapestField: Vector2d = searchCheapestField();
+    //  if (expFlds(cheapestField, cheapestField, { x: 0, y: -1 })) break;
+    //}
   }
 
-  function expFlds(
-    coords: Vector2d,
-    origin: Vector2d,
-    cost: Vector2d
-  ): void | boolean {
+  function expFlds(coords: Vector2d): void | boolean {
     // cost.x is the current g cost for the coords field
 
     const neighbourFields: Vector2d[] = [
@@ -343,17 +357,23 @@ namespace AStar {
     ];
 
     // value of current field
-    const fieldValue: field = mainField[coords.y][coords.x];
+    const fieldValue: Field = fields[coords.y][coords.x];
 
     // start field, wall, small wall (sw has to be handlet differently later)
-    if (fieldValue === s || fieldValue === w || fieldValue === sw) return;
-    else if (fieldValue === e) {
+    if (
+      fieldValue.value === s ||
+      fieldValue.value === w ||
+      fieldValue.value === sw
+    )
+      return;
+    else if (fieldValue.value === e) {
       // end field
       return true;
-    } else if (fieldValue === n) {
+    } else if (fieldValue.value === n) {
       // normal field
       // update values for all neighbour fields
       // which are now cheaper with this as new origin
+      return;
     }
   }
 
