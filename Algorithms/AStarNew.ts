@@ -36,12 +36,14 @@ namespace AStar {
     y: field;
   }
   interface Field {
-    value: field;
-    coords: Vector2d;
-    hCost: cost;
-    gCost: cost;
-    originCoords: Vector2d;
-    explored: boolean;
+    coords: Vector2d; // const
+    value: field; // const
+    hCost: cost; // const
+
+    originCoords: Vector2d; // var
+    gCost: cost; // var
+
+    explored: boolean; // var
   }
   // #endregion
 
@@ -73,9 +75,15 @@ namespace AStar {
   for (let y = 0; y < fieldYLength; ++y) {
     fields.push([]);
     for (let x = 0; x < fieldXLength; ++x) {
+      let value = n;
+      // special fields, specified in field settings
+      for (let i = 0; i < fieldSettings.length; ++i)
+        if (fieldSettings[i][0].x === x && fieldSettings[i][0].y === y)
+          value = fieldSettings[i][1].x;
+
       fields[y].push({
         coords: { x: x, y: y },
-        value: 0,
+        value: value,
         hCost: infinity,
         gCost: infinity,
         originCoords: { x: -1, y: -1 },
@@ -334,6 +342,8 @@ namespace AStar {
   // #endregion
 
   export function aStarSolve(): void {
+    calculateAllHCost();
+
     expFlds(startField);
 
     //while (true) {
@@ -342,7 +352,7 @@ namespace AStar {
     //}
   }
 
-  function expFlds(coords: Vector2d): void | boolean {
+  function expFlds(coords: Vector2d): boolean {
     // cost.x is the current g cost for the coords field
 
     const neighbourFields: Vector2d[] = [
@@ -357,24 +367,31 @@ namespace AStar {
     ];
 
     // value of current field
-    const fieldValue: Field = fields[coords.y][coords.x];
+    const field: Field = fields[coords.y][coords.x];
+
+    // field.value; constant
+    // field.coords; constant
+    // field.hCost; constant
+
+    // field.originCoords; variable
+    // field.gCost; variable
+
+    // field.explored; variable
 
     // start field, wall, small wall (sw has to be handlet differently later)
-    if (
-      fieldValue.value === s ||
-      fieldValue.value === w ||
-      fieldValue.value === sw
-    )
-      return;
-    else if (fieldValue.value === e) {
+    if (field.value === s || field.value === w || field.value === sw)
+      return false;
+    else if (field.value === e) {
       // end field
       return true;
-    } else if (fieldValue.value === n) {
+    } else if (field.value === n) {
       // normal field
       // update values for all neighbour fields
       // which are now cheaper with this as new origin
-      return;
+      return false;
     }
+
+    return false;
   }
 
   function updateFieldValues(
@@ -386,6 +403,16 @@ namespace AStar {
 
   function searchCheapestField(): Vector2d {
     return { x: 0, y: 0 };
+  }
+
+  function calculateAllHCost(): void {
+    for (let y = 0; y < fieldYLength; ++y) {
+      for (let x = 0; x < fieldXLength; ++x) {
+        // TODO
+        fields[y][x].hCost =
+          Math.abs(endField.x - x) + Math.abs(endField.y - y);
+      }
+    }
   }
 }
 
