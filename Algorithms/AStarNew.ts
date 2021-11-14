@@ -44,11 +44,6 @@ namespace AStar {
   }
   // #endregion
 
-  // #region length of the field
-  const fieldXLength: number = 19;
-  const fieldYLength: number = 10;
-  // #endregion
-
   // #region number alias
   const infinity: cost = 9999999999;
 
@@ -61,9 +56,13 @@ namespace AStar {
   // #endregion
 
   // #region Field variables
+  const fieldXLength: number = 19;
+  const fieldYLength: number = 10;
+
   const startField: Vector2d = { x: 4, y: 2 };
   const endField: Vector2d = { x: 5, y: 7 };
-  // settings of the field
+
+  // initialize the field with these settings
   const fieldSettings: Vector2d[][] = [
     [startField, { x: s, y: -1 }],
     [endField, { x: e, y: -1 }]
@@ -77,7 +76,7 @@ namespace AStar {
   );
 
   export const workField: (null | Field)[] = [];
-  for (let i = 0; i < fieldXLength + fieldYLength; ++i) workField.push(null);
+  for (let i = 0; i < fieldXLength * fieldYLength; ++i) workField.push(null);
 
   // #region costs and way
   // way cost from start field to current field
@@ -298,7 +297,7 @@ namespace AStar {
         // infos of current field
         const fieldInfos: Field | null =
           workField[(x.y + nF.y) * fieldXLength + (x.x + nF.x)];
-        
+
         if (fieldInfos === null || fieldInfos.gCost + fieldInfos.hCost < 0) {
           workField[(x.y + nF.y) * fieldXLength + (x.x + nF.x)] = {
             coords: nF,
@@ -316,8 +315,62 @@ namespace AStar {
     return [];
   }
   // #endregion
+
+  export function aStarSolve(): void {
+    expFlds(startField, startField, { x: 0, y: -1 });
+    while (true) {
+      const cheapestField: Vector2d = searchCheapestField();
+      if (expFlds(cheapestField, cheapestField, { x: 0, y: -1 })) break;
+    }
+  }
+
+  function expFlds(
+    coords: Vector2d,
+    origin: Vector2d,
+    cost: Vector2d
+  ): void | boolean {
+    // cost.x is the current g cost for the coords field
+
+    const neighbourFields: Vector2d[] = [
+      { x: 1, y: 0 },
+      { x: 0, y: 1 },
+      { x: 1, y: 1 },
+      { x: -1, y: 0 },
+      { x: 0, y: -1 },
+      { x: -1, y: -1 },
+      { x: 1, y: -1 },
+      { x: -1, y: 1 }
+    ];
+
+    // value of current field
+    const fieldValue: field = mainField[coords.y][coords.x];
+
+    // start field, wall, small wall (sw has to be handlet differently later)
+    if (fieldValue === s || fieldValue === w || fieldValue === sw) return;
+    else if (fieldValue === e) {
+      // end field
+      return true;
+    } else if (fieldValue === n) {
+      // normal field
+      // update values for all neighbour fields
+      // which are now cheaper with this as new origin
+    }
+  }
+
+  function updateFieldValues(
+    coords: Vector2d,
+    origin: Vector2d,
+    gCost: cost,
+    hCost: cost
+  ): void {}
+
+  function searchCheapestField(): Vector2d {
+    return { x: 0, y: 0 };
+  }
 }
 
-console.log(AStar.showField());
 //console.log(AStar.showField(AStar.hCost));
-AStar.solveMaze();
+//AStar.solveMaze();
+
+console.log(AStar.showField());
+AStar.aStarSolve();

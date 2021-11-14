@@ -25,38 +25,47 @@ type whitespace = `${'' | ' ' | '\n' | '\r' | '\t'}`;
 export namespace Json {
   /**
    * @param replacer A function that transforms the results.
-   * @param replacer An array of strings and numbers that acts as an approved list for selecting the object properties that will be stringified.
+   * @param replacer An array of strings and numbers that acts as an approved list
+   * for selecting the object properties that will be stringified.
    */
 
   /**
    * Converts a JavaScript value to a JavaScript Object Notation (JSON) string.
    *
    * @param value A JavaScript value, usually an object or array, to be converted.
-   * @param space Adds indentation, white space, and line break characters to the return-value JSON text to make it easier to read.
+   * @param space Adds indentation, white space, and line break characters to
+   * the return-value JSON text to make it easier to read.
    * Up to four of these characters are allowed: " ", "\n", "\r", "\t".
-   * @returns Returns a valid Json string.
+   * @returns Returns a JSON string.
    */
-  export function stringify(value: JSON, space: string = ''): string {
+  export function stringify(value: JSON, space: string | number = ''): string {
     //if (!space.match(/^(| |\n|\r|\t)*$/)) throw new Error('Invalid spacing.');
-    if (space.length > 10) space = space.slice(0, 10);
+    if (typeof space === 'number') space = ' '.repeat(space);
+    if (space.length > 10) space = space.slice(0, 10); // valid spacing
     return primitiveToString.primitiveToString(value, space, 1);
   }
 
   /**
    * Converts a JavaScript Object Notation (JSON) string into an object.
    *
-   * @param text A valid JSON string.
+   * @param text A JSON string.
    * @returns A JavaScript value.
    */
   export function parse<T extends JSON>(text: string): T {
     return stringToPrimitive.stringToPrimitive(text) as T;
   }
 
+  /**
+   * Prettifys a JSON string (adds valid spacing).
+   *
+   * @param text The to prettify string.
+   * @param format The spacing mode.
+   * @returns The prettified string.
+   */
   export function prettify(
     text: string,
     format: FormatMode | '' | '  ' | '\t' | '\n' | '\r'
   ): string {
-    if (format === '\n') format = '\r';
     const data: JSON = parse(text);
     switch (format) {
       case FormatMode.NoSpace:
@@ -92,6 +101,9 @@ export namespace Json {
     return isPrimitive.isPrimitive(value);
   }
 
+  /**
+   * Formatting modes for prettifier.
+   */
   export const enum FormatMode {
     NoSpace = '',
     DoubleSpace = '  ',
@@ -101,10 +113,12 @@ export namespace Json {
   }
 }
 
-// finish
-namespace isPrimitive {
+export namespace isPrimitive {
   /**
-   * only valid json primitives so e.g. Infinity is not a valid number
+   * Checks if a value is parsable into a JSON string.
+   *
+   * @param primitive The JavaScript value to check.
+   * @returns If the JavaScript object can be parsed into an JSON string without problems.
    */
   export function isPrimitive(primitive: unknown): boolean {
     return (
@@ -112,6 +126,7 @@ namespace isPrimitive {
     );
   }
 
+  // primitive: null, boolean, string, number
   export function isPrimitiveLiteral(primitive: unknown): boolean {
     return (
       isNull(primitive) ||
@@ -133,15 +148,16 @@ namespace isPrimitive {
     return typeof str === 'string';
   }
 
+  // n can't be infinite or a nan
   export function isNumber(n: unknown): n is number {
     return typeof n === 'number' && !Number.isNaN(n) && Number.isFinite(n);
   }
 
   export function isArray(ar: unknown): ar is JSON[] {
+    // check if it is an array
     if (!Array.isArray(ar)) return false;
     // every value has to be valid too
     for (const value of ar) if (!isPrimitive(value)) return false;
-
     return true;
   }
 
@@ -157,34 +173,36 @@ namespace isPrimitive {
   }
 }
 
-// special case (int) TODO
 export namespace isJsonString {
+  /**
+   * Checks if a JSON string is valid and parsable into JavaScript.
+   *
+   * @param json The string to check.
+   * @returns If the string can be parsed into an JavaScript object without problems.
+   */
   export function isJson(json: string): boolean {
     return isJsonLiteral(json) || isArray(json) || isObject(json);
   }
 
+  // literal: booleans, strings and numbers
   export function isJsonLiteral(json: string): boolean {
     return isNull(json) || isBoolean(json) || isString(json) || isNumber(json);
   }
 
   export function isNull(n: string): n is 'null' {
-    n = trimValueWhitespaces(n);
-    return !!n.match(isJsonNullRegex);
+    return !!trimValueWhitespaces(n).match(isJsonNullRegex);
   }
 
   export function isBoolean(bool: string): bool is 'true' | 'false' {
-    bool = trimValueWhitespaces(bool);
-    return !!bool.match(isJsonBoolRegex);
+    return !!trimValueWhitespaces(bool).match(isJsonBoolRegex);
   }
 
   export function isString(str: string): str is string {
-    str = trimValueWhitespaces(str);
-    return !!str.match(isJsonStringRegex);
+    return !!trimValueWhitespaces(str).match(isJsonStringRegex);
   }
 
   export function isNumber(n: string): boolean {
-    n = trimValueWhitespaces(n);
-    return !!n.match(isJsonNumberRegex);
+    return !!trimValueWhitespaces(n).match(isJsonNumberRegex);
   }
 
   export function isArray(ar: string): boolean {
@@ -201,17 +219,8 @@ export namespace isJsonString {
       return false;
     }
 
-    for (let value of values) {
-      if (
-        !isNull(value) &&
-        !isBoolean(value) &&
-        !isString(value) &&
-        !isNumber(value) &&
-        !isArray(value) &&
-        !isObject(value)
-      )
-        return false; // not from type json
-    }
+    // a value is not from type json
+    for (let value of values) if (!isJson(value)) return false;
 
     return true; // passed all tests
   }
@@ -223,32 +232,21 @@ export namespace isJsonString {
     if (!obj.startsWith('{') || !obj.endsWith('}')) return false;
 
     // get the KV pairs in the format of [ [key,value],[key,value] ]
-    const parts: string[][] = getKVPairsUnsafe(obj);
-
-    for (let part of parts) {
+    for (let part of getKVPairsUnsafe(obj)) {
       // check invalid name
       if (!isString(part[0])) return false;
       // check for invalid value
-      const value: string = part[1];
-      if (
-        !isNull(value) &&
-        !isBoolean(value) &&
-        !isString(value) &&
-        !isNumber(value) &&
-        !isArray(value) &&
-        !isObject(value)
-      )
-        return false;
+      if (!isJson(part[1])) return false;
     }
 
     return true;
   }
 
-  // TODO only is int
   export namespace SpecialSearches {
-    // TODO
     export function isInteger(n: string): boolean {
-      return isNumber(n) && Number.isInteger(stringToPrimitive.toNumber(n));
+      // TODO
+      const int: number = stringToPrimitive.toNumber(n);
+      return isNumber(n) && int === Math.trunc(int);
     }
 
     export function isNullArray(ar: string): boolean {
@@ -301,22 +299,29 @@ export namespace isJsonString {
   }
 }
 
-// to number
+// to number, string and spacing
 export namespace primitiveToString {
+  /**
+   * Convert a JavaScript value into a JSON string.
+   *
+   * @param json The JavaScript value to parse.
+   * @param space The spacing for the resulting string.
+   * @param neastedInside Intern function, DO NOT EDIT.
+   * @returns A JSON string.
+   */
   export function primitiveToString(
     json: JSON,
     space: string = '',
     neastedInside: number = 1
-  ) {
+  ): string {
     if (isPrimitive.isNull(json)) return toNull(json);
-    else if (isPrimitive.isBoolean(json)) return toBoolean(json);
-    else if (isPrimitive.isString(json)) return toString(json);
-    else if (isPrimitive.isNumber(json)) return toNumber(json);
-    else if (isPrimitive.isArray(json))
-      return toArray(json, space, neastedInside);
-    else if (isPrimitive.isObject(json))
-      return toObject(json, space, neastedInside);
-    else throw new Error(`${json} is not a valid json primitive.`);
+    if (isPrimitive.isBoolean(json)) return toBoolean(json);
+    if (isPrimitive.isString(json)) return toString(json);
+    if (isPrimitive.isNumber(json)) return toNumber(json);
+    if (isPrimitive.isArray(json)) return toArray(json, space, neastedInside);
+    if (isPrimitive.isObject(json)) return toObject(json, space, neastedInside);
+
+    throw new Error(`${json} is not a valid json primitive.`);
   }
 
   export function toNull(n: null): string {
@@ -378,7 +383,7 @@ export namespace primitiveToString {
       throw new Error(`Array ${ar} is not a valid json array.`);
 
     if (space === '') {
-      // unformated
+      // unformatted
       let ans: string = '[';
       for (const e of ar)
         ans += space + primitiveToString(e, space, neastedInside + 1) + ',';
@@ -415,7 +420,7 @@ export namespace primitiveToString {
       throw new Error(`Object ${obj} is not a valid json object.`);
 
     if (space === '') {
-      // unformated
+      // unformatted
       let ans: string = '{';
       for (const [k, v] of Object.entries(obj))
         ans +=
@@ -453,14 +458,21 @@ export namespace primitiveToString {
 
 // TODO
 export namespace stringToPrimitive {
+  /**
+   * Parse a JSON string into a JavaScript object.
+   *
+   * @param string The JSON string to parse.
+   * @returns The resulting JavaScript value.
+   */
   export function stringToPrimitive(string: string): JSON {
     if (isJsonString.isNull(string)) return toNull(string);
-    else if (isJsonString.isBoolean(string)) return toBoolean(string);
-    else if (isJsonString.isString(string)) return toString(string);
-    else if (isJsonString.isNumber(string)) return toNumber(string);
-    else if (isJsonString.isArray(string)) return toArray(string);
-    else if (isJsonString.isObject(string)) return toObject(string);
-    else throw new Error(`${string} is not a valid json string.`);
+    if (isJsonString.isBoolean(string)) return toBoolean(string);
+    if (isJsonString.isString(string)) return toString(string);
+    if (isJsonString.isNumber(string)) return toNumber(string);
+    if (isJsonString.isArray(string)) return toArray(string);
+    if (isJsonString.isObject(string)) return toObject(string);
+
+    throw new Error(`${string} is not a valid json string.`);
   }
 
   export function toNull(n: string): null {
@@ -546,15 +558,27 @@ export namespace jsonStringManipulation {
   }
 
   export function getNameValuePairs(jsonObject: string): string[][] {
-    return [[]];
+    return getKVPairsUnsafe(jsonObject);
   }
 
-  export function getValueByIndex(jsonArray: string, index: number): string {
-    return '';
+  export function getValueByIndex(
+    jsonArray: string,
+    index: number
+  ): string | undefined {
+    const value: string[] | undefined = getArrayValues(jsonArray);
+    if (value === undefined) return undefined;
+    return value[index];
   }
 
-  export function getValueByKey(jsonObject: string, key: number): string {
-    return '';
+  export function getValueByKey(
+    jsonObject: string,
+    key: string
+  ): string | undefined {
+    const value: string[] | undefined = getNameValuePairs(jsonObject).find(
+      (s) => removeChars(s[0], 1, 1) === key
+    );
+    if (value === undefined) return undefined;
+    return value[1];
   }
 
   export function sortArray(json: string): string {
@@ -567,6 +591,14 @@ export namespace jsonStringManipulation {
     return false;
   }
 }
+
+const array = new Array(133_000_000);
+for (let i = 0; i < array.length; ++i) array[i] = Math.random();
+
+let sum: number = 0;
+for (let i = 0; i < array.length; ++i) sum += array[i];
+
+console.log(sum / array.length);
 
 // #region outside
 function trimValueWhitespaces(str: string): string {
@@ -965,7 +997,7 @@ const ans2 = JSON.parse(JSON.stringify(obj2, undefined, ws));
 //console.log(ans === ans2);
 //console.log(ans2);
 
-console.log(Json.prettify(Json.stringify(obj, '  '), Json.FormatMode.NewLine));
+//console.log(Json.prettify(Json.stringify(obj, '  '), Json.FormatMode.NewLine));
 
 // "x" will be interpreted as "0.x"
 function intToFrac1(number: string): number {
@@ -994,9 +1026,11 @@ function intToFrac2(number: string): number {
   return ans;
 }
 
-console.log(
-  JSON.stringify({ test: '1', what: 2 }, (key, value) => {
-    console.log('key: ' + key, 'value: ' + value);
-    return value;
-  })
-);
+//console.log(
+//  JSON.stringify({ test: '1', what: 2 }, (key, value) => {
+//    console.log('key: ' + key, 'value: ' + value);
+//    return value;
+//  })
+//);
+
+//console.log(isJsonString.SpecialSearches.isInteger('-0.05e2'));
