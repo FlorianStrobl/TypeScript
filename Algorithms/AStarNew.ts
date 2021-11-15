@@ -342,7 +342,7 @@ namespace AStar {
   // #endregion
 
   export function aStarSolve(): void {
-    calculateAllHCost();
+    calculateAllHCost(); // calc all the constant values
 
     expFlds(startField);
 
@@ -353,8 +353,6 @@ namespace AStar {
   }
 
   function expFlds(coords: Vector2d): boolean {
-    // cost.x is the current g cost for the coords field
-
     const neighbourFields: Vector2d[] = [
       { x: 1, y: 0 },
       { x: 0, y: 1 },
@@ -369,21 +367,19 @@ namespace AStar {
     // value of current field
     const field: Field = fields[coords.y][coords.x];
 
-    // field.value; constant
-    // field.coords; constant
-    // field.hCost; constant
-
     // field.originCoords; variable
     // field.gCost; variable
 
     // field.explored; variable
 
-    // start field, wall, small wall (sw has to be handlet differently later)
-    if (field.value === s || field.value === w || field.value === sw)
-      return false;
+    // start field, wall
+    if (field.value === s || field.value === w) return false;
     else if (field.value === e) {
       // end field
       return true;
+    } else if (field.value === sw) {
+      // small wall (sw has to be handlet differently later)
+      return false;
     } else if (field.value === n) {
       // normal field
       // update values for all neighbour fields
@@ -405,12 +401,14 @@ namespace AStar {
     return { x: 0, y: 0 };
   }
 
+  // calc all the h cost at the begining, since it is constant
   function calculateAllHCost(): void {
     for (let y = 0; y < fieldYLength; ++y) {
       for (let x = 0; x < fieldXLength; ++x) {
         // TODO
-        fields[y][x].hCost =
-          Math.abs(endField.x - x) + Math.abs(endField.y - y);
+        fields[y][x].hCost = Math.sqrt(
+          Math.abs(endField.x - x) ** 2 + Math.abs(endField.y - y) ** 2
+        );
       }
     }
   }
@@ -421,3 +419,20 @@ namespace AStar {
 
 console.log(AStar.showField());
 AStar.aStarSolve();
+
+namespace LegoRoboter {
+  interface Vector2d {
+    x: number;
+    y: number;
+  }
+  interface position {
+    coordinates: Vector2d;
+    angle: number;
+  }
+  interface movement {
+    motor1Speed: number;
+    motor1Time: number;
+    motor2Speed: number;
+    motor2Time: number;
+  }
+}
