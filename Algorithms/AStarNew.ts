@@ -421,6 +421,35 @@ console.log(AStar.showField());
 AStar.aStarSolve();
 
 namespace LegoRoboter {
+  // motors.getAllMotorData()[0].actualSpeed: number
+  // motors.getAllMotorData()[0].count: number
+  // motors.getAllMotorData()[0].tachoCount: number
+
+  // Motor.angle(): number
+  // Motor.speed(): number
+  // Motor.isReady(): boolean
+
+  // Motor.stop(): void
+  // Motor.reset(): void
+  // Motor.clearCounts(): void
+  // Motor.markUsed(): void
+
+  // Motor.setBrake(brake: boolean): void
+  // Motor.setBrakeSettleTime(millis: number): void
+
+  // Motor.pauseUntilReady(timeOut ?: number): void
+  // Motor.pauseUntilStalled(timeOut?: number): void
+
+  // Motor.setPauseOnRun(value: boolean): void
+
+  // Motor.setRunPhase(phase: MovePhase, value: number, unit: MoveUnit = MoveUnit.MilliSeconds): void
+
+  // Motor.run(speed: number, value: number = 0, unit: MoveUnit = MoveUnit.MilliSeconds): void
+  // Motor.ramp(speed: number, value: number = 500, unit: MoveUnit = MoveUnit.MilliSeconds, acceleration?: number, deceleration?: number): void
+
+  // SynchedMotorPair.steer(turnRatio: number, speed: number, value: number = 0, unit: MoveUnit = MoveUnit.MilliSeconds): void
+  // SynchedMotorPair.tank(speedLeft: number, speedRight: number, value: number = 0, unit: MoveUnit = MoveUnit.MilliSeconds): void
+
   interface Vector2d {
     x: number;
     y: number;
