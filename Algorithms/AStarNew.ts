@@ -377,14 +377,26 @@ namespace AStar {
       console.log(path.map((f) => f.coords));
     }
 
+    let ar = [];
+    for (let y = 0; y < 19; ++y) {
+      ar.push([]);
+      for (let x = 0; x < 10; ++x) {
+        if (
+          (startField.x === x && startField.y === y) ||
+          (endField.x === x && endField.y === y)
+        )
+          ar[y].push('#ff0000');
+        else if (path.some((c) => c.coords.x === x && c.coords.y === y))
+          ar[y].push('#ff00ff');
+        else ar[y].push('#ffffff');
+      }
+    }
+
+    //console.log(ar);
+
     //console.log(
     //  _getFields((f) => f.explored === 2).map((f) => f.coords).length
     //);
-
-    //while (true) {
-    //  const cheapestField: Vector2d = searchCheapestField();
-    //  if (expFlds(cheapestField, cheapestField, { x: 0, y: -1 })) break;
-    //}
   }
 
   // returns the current cheapest field with an explored state bigger than 0 (was at least once traversed)
