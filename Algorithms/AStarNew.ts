@@ -92,11 +92,27 @@ namespace AStar {
     [
       { x: 4, y: 3 }, // coords start
       { x: w, y: -1 }
+    ],
+    [
+      { x: 5, y: 8 }, // coords start
+      { x: w, y: -1 }
+    ],
+    [
+      { x: 4, y: 8 }, // coords start
+      { x: w, y: -1 }
+    ],
+    [
+      { x: 5, y: 6 }, // coords start
+      { x: w, y: -1 }
+    ],
+    [
+      { x: 4, y: 7 }, // coords start
+      { x: w, y: -1 }
     ]
   ];
 
-  export const fields: Field[][] = doFields();
-  function doFields(): Field[][] {
+  export const fields: Field[][] = initzialiseFields();
+  function initzialiseFields(): Field[][] {
     let _fields: Field[][] = [];
     for (let y = 0; y < fieldYLength; ++y) {
       _fields.push([]);
@@ -312,9 +328,10 @@ namespace AStar {
     return fieldArray;
   }
 
-  export function toPixelInfo(path: Field[]): string[][][] {
-    const fields1: Field[] = getFields((f) => f.state === 0);
-
+  export function toPixelInfo(
+    _fields: Field[],
+    _path: Vector2d[]
+  ): string[][][] {
     let pixelInfo: string[][][] = [];
     for (let y = 0; y < fieldYLength; ++y) {
       pixelInfo.push([]); // y dimension
@@ -329,31 +346,36 @@ namespace AStar {
       }
     }
 
-    for (const _f of path) {
+    for (const _f of _fields) {
       // color
+      let color: string = '#ffffff';
       switch (_f.type) {
         case n:
-          pixelInfo[_f.coords.y][_f.coords.x][0] = '#ffffff';
+          color = '#ffffff';
           break;
         case s:
-          pixelInfo[_f.coords.y][_f.coords.x][0] = '#0000ff';
+          color = '#0000ff';
           break;
         case e:
-          pixelInfo[_f.coords.y][_f.coords.x][0] = '#ff0000';
+          color = '#ff0000';
           break;
         case w:
-          pixelInfo[_f.coords.y][_f.coords.x][0] = '#808080';
+          color = '#808080';
           break;
         case p:
-          pixelInfo[_f.coords.y][_f.coords.x][0] = '#00ff00';
+          color = '#00ff00';
           break;
         case 6:
-          pixelInfo[_f.coords.y][_f.coords.x][0] = '#ffff00';
+          color = '#ffff00';
           break;
-        default:
-          pixelInfo[_f.coords.y][_f.coords.x][0] = '#ffffff';
+        case 7:
+          if (!_path.some((i) => i.x === _f.coords.x && i.y === _f.coords.y))
+            color = '#00ffff';
+          else color = '#ffff00';
           break;
       }
+
+      pixelInfo[_f.coords.y][_f.coords.x][0] = color;
 
       pixelInfo[_f.coords.y][_f.coords.x][1] =
         _f.hCost !== infinity
@@ -384,11 +406,18 @@ AStar.getFields((f) => {
     )
   )
     AStar.fields[f.coords.y][f.coords.x].type = 5; // path field
-  if (f.state === 1) AStar.fields[f.coords.y][f.coords.x].type = 6; // test field
+  // test field
+  if (f.state === 1) AStar.fields[f.coords.y][f.coords.x].type = 6;
+  else if (f.state === 2) AStar.fields[f.coords.y][f.coords.x].type = 7; // test field
   return false;
 });
 console.log(AStar.draw(AStar.fields));
-console.log(AStar.toPixelInfo(AStar.getFields(() => true)));
+console.log(
+  AStar.toPixelInfo(
+    AStar.getFields(() => true),
+    path
+  )
+);
 
 namespace LegoRoboter {
   // motors.getAllMotorData()[0].actualSpeed: number
