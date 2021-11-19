@@ -82,15 +82,15 @@ namespace AStar {
     [startField, { x: s, y: -1 }],
     [endField, { x: e, y: -1 }],
     [
-      { x: 0, y: 0 },
+      { x: 0, y: 0 }, // coord 1
       { x: w, y: -1 }
     ],
     [
-      { x: 18, y: 9 },
+      { x: 18, y: 9 }, // coord 2
       { x: w, y: -1 }
     ],
     [
-      { x: 4, y: 3 },
+      { x: 4, y: 3 }, // coords start
       { x: w, y: -1 }
     ]
   ];
@@ -123,7 +123,7 @@ namespace AStar {
   // #endregion
 
   export function pathfinding(): Vector2d[] {
-    let searchDepthCounter: number = 0;
+    let searchDepthCounter: number = 1000;
     let foundEnd: boolean = false;
     // the results in between
     let middleTimeResults: { state1Fields: Field[]; state2Fields: Field[] }[] =
@@ -143,7 +143,7 @@ namespace AStar {
         state2Fields: getFields((f) => f.state === 2)
       });
 
-      if (++searchDepthCounter === 1000 || foundEnd) break;
+      if (--searchDepthCounter === 0 || foundEnd) break;
     }
 
     if (foundEnd) return findPath().map((f) => f.coords);
