@@ -31,6 +31,10 @@ interface Vector2d {
   y: number;
 }
 
+// Number.POSITIVE_INFINITY alias
+// TODO remove
+const infinity: number = 9999999999;
+
 namespace AStar {
   interface Field {
     coords: Vector2d; // const: coordinates of the field
@@ -42,10 +46,6 @@ namespace AStar {
   }
 
   // #region vars
-  // Number.POSITIVE_INFINITY alias
-  // TODO remove
-  const infinity: number = 9999999999;
-
   // field types
   const n: number = 0; // nothing
   const s: number = 1; // starting field
@@ -80,7 +80,19 @@ namespace AStar {
   // initialize the field with these settings
   const fieldSettings: Vector2d[][] = [
     [startField, { x: s, y: -1 }],
-    [endField, { x: e, y: -1 }]
+    [endField, { x: e, y: -1 }],
+    [
+      { x: 0, y: 0 },
+      { x: w, y: -1 }
+    ],
+    [
+      { x: 18, y: 9 },
+      { x: w, y: -1 }
+    ],
+    [
+      { x: 4, y: 3 },
+      { x: w, y: -1 }
+    ]
   ];
 
   export const fields: Field[][] = doFields();
@@ -189,10 +201,10 @@ namespace AStar {
           case s:
           case w:
             // start or wall
-            return false;
+            break;
           case sw:
             // small wall
-            return false;
+            break;
           case n:
           case e:
             // normal or end
@@ -303,7 +315,8 @@ namespace AStar {
 
         // infos of field
         pixelInfo[y][x].push('color');
-        pixelInfo[y][x].push('info 1');
+        pixelInfo[y][x].push('hCost');
+        pixelInfo[y][x].push('gCost');
       }
     }
 
@@ -320,7 +333,7 @@ namespace AStar {
           pixelInfo[_f.coords.y][_f.coords.x][0] = '#ff0000';
           break;
         case w:
-          pixelInfo[_f.coords.y][_f.coords.x][0] = '#ff00ff';
+          pixelInfo[_f.coords.y][_f.coords.x][0] = '#808080';
           break;
         case p:
           pixelInfo[_f.coords.y][_f.coords.x][0] = '#00ff00';
@@ -336,6 +349,11 @@ namespace AStar {
       pixelInfo[_f.coords.y][_f.coords.x][1] = (
         Math.round(_f.hCost * 10) / 10
       ).toString();
+
+      pixelInfo[_f.coords.y][_f.coords.x][2] =
+        _f.gCost !== infinity
+          ? (Math.round(_f.gCost * 10) / 10).toString()
+          : '-';
     }
 
     return pixelInfo;

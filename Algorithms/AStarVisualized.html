@@ -12,28 +12,45 @@
   const windowHeight = 1010;
   const xLength = 19;
   const yLength = 10;
-  const scale = 100;
+  const scale = 90;
 
   const c = document.getElementById('shower');
   const ctx = c.getContext('2d');
 
-  function drawPixel(x, y, size, color, text) {
+  function drawField(x, y, size, color, text1, text2) {
     // pixel
     ctx.fillStyle = color;
     ctx.fillRect(x, y, size, size);
 
     // text
-    ctx.font = '25px Georgia';
+    ctx.font = '20px Georgia';
     ctx.fillStyle = '#000000';
-    if (text)
-      ctx.fillText(text, x + size / 2 - text.length * 3.5, y + size / 2);
+    if (text1) {
+      text1 = 'h: ' + text1;
+      const fldShift = size / 2;
+      const txtShift = text1.length * 3.5;
+      ctx.fillText(text1, x + fldShift - txtShift, y + fldShift + 15);
+    }
+    if (text2) {
+      text2 = 'g: ' + text2;
+      const fldShift = size / 2;
+      const txtShift = text2.length * 3.5;
+      ctx.fillText(text2, x + fldShift - txtShift, y + fldShift - 15);
+    }
   }
 
-  function fillPixels(data, text) {
+  function fillPixels(data = fieldInfos) {
     // pixel itself
     for (let y = 0; y < yLength; ++y)
       for (let x = 0; x < xLength; ++x)
-        drawPixel(x * scale, y * scale, scale, data[y][x][0], data[y][x][1]);
+        drawField(
+          x * scale,
+          y * scale,
+          scale,
+          data[y][x][0],
+          data[y][x][1],
+          data[y][x][2]
+        );
 
     // grid
     ctx.fillStyle = '#000000';
@@ -44,221 +61,220 @@
       }
   }
 
-  pixelArray = [
+  fieldInfos = [
     [
-      ['#ffffff', '8.6'],
-      ['#ffffff', '8.1'],
-      ['#ffffff', '7.6'],
-      ['#ffffff', '7.3'],
-      ['#ffffff', '7.1'],
-      ['#ffffff', '7'],
-      ['#ffffff', '7.1'],
-      ['#ffffff', '7.3'],
-      ['#ffffff', '7.6'],
-      ['#ffffff', '8.1'],
-      ['#ffffff', '8.6'],
-      ['#ffffff', '9.2'],
-      ['#ffffff', '9.9'],
-      ['#ffffff', '10.6'],
-      ['#ffffff', '11.4'],
-      ['#ffffff', '12.2'],
-      ['#ffffff', '13'],
-      ['#ffffff', '13.9'],
-      ['#ffffff', '14.8']
+      ['#808080', '8.6', '-'],
+      ['#ffffff', '8.1', '-'],
+      ['#ffffff', '7.6', '-'],
+      ['#ffffff', '7.3', '-'],
+      ['#ffffff', '7.1', '-'],
+      ['#ffffff', '7', '-'],
+      ['#ffffff', '7.1', '-'],
+      ['#ffffff', '7.3', '-'],
+      ['#ffffff', '7.6', '-'],
+      ['#ffffff', '8.1', '-'],
+      ['#ffffff', '8.6', '-'],
+      ['#ffffff', '9.2', '-'],
+      ['#ffffff', '9.9', '-'],
+      ['#ffffff', '10.6', '-'],
+      ['#ffffff', '11.4', '-'],
+      ['#ffffff', '12.2', '-'],
+      ['#ffffff', '13', '-'],
+      ['#ffffff', '13.9', '-'],
+      ['#ffffff', '14.8', '-']
     ],
     [
-      ['#ffffff', '7.8'],
-      ['#ffffff', '7.2'],
-      ['#ffffff', '6.7'],
-      ['#ffff00', '6.3'],
-      ['#ffff00', '6.1'],
-      ['#ffff00', '6'],
-      ['#ffff00', '6.1'],
-      ['#ffffff', '6.3'],
-      ['#ffffff', '6.7'],
-      ['#ffffff', '7.2'],
-      ['#ffffff', '7.8'],
-      ['#ffffff', '8.5'],
-      ['#ffffff', '9.2'],
-      ['#ffffff', '10'],
-      ['#ffffff', '10.8'],
-      ['#ffffff', '11.7'],
-      ['#ffffff', '12.5'],
-      ['#ffffff', '13.4'],
-      ['#ffffff', '14.3']
+      ['#ffffff', '7.8', '-'],
+      ['#ffffff', '7.2', '-'],
+      ['#ffffff', '6.7', '-'],
+      ['#ffff00', '6.3', '1.4'],
+      ['#ffff00', '6.1', '1'],
+      ['#ffff00', '6', '1.4'],
+      ['#ffffff', '6.1', '-'],
+      ['#ffffff', '6.3', '-'],
+      ['#ffffff', '6.7', '-'],
+      ['#ffffff', '7.2', '-'],
+      ['#ffffff', '7.8', '-'],
+      ['#ffffff', '8.5', '-'],
+      ['#ffffff', '9.2', '-'],
+      ['#ffffff', '10', '-'],
+      ['#ffffff', '10.8', '-'],
+      ['#ffffff', '11.7', '-'],
+      ['#ffffff', '12.5', '-'],
+      ['#ffffff', '13.4', '-'],
+      ['#ffffff', '14.3', '-']
     ],
     [
-      ['#ffffff', '7.1'],
-      ['#ffffff', '6.4'],
-      ['#ffffff', '5.8'],
-      ['#ffff00', '5.4'],
-      ['#0000ff', '5.1'],
-      ['#ffffff', '5'],
-      ['#ffff00', '5.1'],
-      ['#ffffff', '5.4'],
-      ['#ffffff', '5.8'],
-      ['#ffffff', '6.4'],
-      ['#ffffff', '7.1'],
-      ['#ffffff', '7.8'],
-      ['#ffffff', '8.6'],
-      ['#ffffff', '9.4'],
-      ['#ffffff', '10.3'],
-      ['#ffffff', '11.2'],
-      ['#ffffff', '12.1'],
-      ['#ffffff', '13'],
-      ['#ffffff', '13.9']
+      ['#ffffff', '7.1', '-'],
+      ['#ffffff', '6.4', '-'],
+      ['#ffffff', '5.8', '-'],
+      ['#ffff00', '5.4', '1'],
+      ['#0000ff', '5.1', '0'],
+      ['#ffff00', '5', '1'],
+      ['#ffff00', '5.1', '2.8'],
+      ['#ffffff', '5.4', '-'],
+      ['#ffffff', '5.8', '-'],
+      ['#ffffff', '6.4', '-'],
+      ['#ffffff', '7.1', '-'],
+      ['#ffffff', '7.8', '-'],
+      ['#ffffff', '8.6', '-'],
+      ['#ffffff', '9.4', '-'],
+      ['#ffffff', '10.3', '-'],
+      ['#ffffff', '11.2', '-'],
+      ['#ffffff', '12.1', '-'],
+      ['#ffffff', '13', '-'],
+      ['#ffffff', '13.9', '-']
     ],
     [
-      ['#ffffff', '6.4'],
-      ['#ffffff', '5.7'],
-      ['#ffff00', '5'],
-      ['#ffffff', '4.5'],
-      ['#00ff00', '4.1'],
-      ['#ffffff', '4'],
-      ['#ffffff', '4.1'],
-      ['#ffffff', '4.5'],
-      ['#ffffff', '5'],
-      ['#ffffff', '5.7'],
-      ['#ffffff', '6.4'],
-      ['#ffffff', '7.2'],
-      ['#ffffff', '8.1'],
-      ['#ffffff', '8.9'],
-      ['#ffffff', '9.8'],
-      ['#ffffff', '10.8'],
-      ['#ffffff', '11.7'],
-      ['#ffffff', '12.6'],
-      ['#ffffff', '13.6']
+      ['#ffffff', '6.4', '-'],
+      ['#ffffff', '5.7', '-'],
+      ['#ffffff', '5', '-'],
+      ['#ffff00', '4.5', '1.4'],
+      ['#808080', '4.1', '-'],
+      ['#00ff00', '4', '1.4'],
+      ['#ffff00', '4.1', '2.4'],
+      ['#ffffff', '4.5', '-'],
+      ['#ffffff', '5', '-'],
+      ['#ffffff', '5.7', '-'],
+      ['#ffffff', '6.4', '-'],
+      ['#ffffff', '7.2', '-'],
+      ['#ffffff', '8.1', '-'],
+      ['#ffffff', '8.9', '-'],
+      ['#ffffff', '9.8', '-'],
+      ['#ffffff', '10.8', '-'],
+      ['#ffffff', '11.7', '-'],
+      ['#ffffff', '12.6', '-'],
+      ['#ffffff', '13.6', '-']
     ],
     [
-      ['#ffffff', '5.8'],
-      ['#ffffff', '5'],
-      ['#ffff00', '4.2'],
-      ['#00ff00', '3.6'],
-      ['#ffffff', '3.2'],
-      ['#ffff00', '3'],
-      ['#ffffff', '3.2'],
-      ['#ffffff', '3.6'],
-      ['#ffffff', '4.2'],
-      ['#ffffff', '5'],
-      ['#ffffff', '5.8'],
-      ['#ffffff', '6.7'],
-      ['#ffffff', '7.6'],
-      ['#ffffff', '8.5'],
-      ['#ffffff', '9.5'],
-      ['#ffffff', '10.4'],
-      ['#ffffff', '11.4'],
-      ['#ffffff', '12.4'],
-      ['#ffffff', '13.3']
+      ['#ffffff', '5.8', '-'],
+      ['#ffffff', '5', '-'],
+      ['#ffffff', '4.2', '-'],
+      ['#ffffff', '3.6', '-'],
+      ['#ffff00', '3.2', '2.8'],
+      ['#00ff00', '3', '2.4'],
+      ['#ffff00', '3.2', '2.8'],
+      ['#ffffff', '3.6', '-'],
+      ['#ffffff', '4.2', '-'],
+      ['#ffffff', '5', '-'],
+      ['#ffffff', '5.8', '-'],
+      ['#ffffff', '6.7', '-'],
+      ['#ffffff', '7.6', '-'],
+      ['#ffffff', '8.5', '-'],
+      ['#ffffff', '9.5', '-'],
+      ['#ffffff', '10.4', '-'],
+      ['#ffffff', '11.4', '-'],
+      ['#ffffff', '12.4', '-'],
+      ['#ffffff', '13.3', '-']
     ],
     [
-      ['#ffffff', '5.4'],
-      ['#ffffff', '4.5'],
-      ['#ffff00', '3.6'],
-      ['#ffff00', '2.8'],
-      ['#00ff00', '2.2'],
-      ['#ffff00', '2'],
-      ['#ffff00', '2.2'],
-      ['#ffffff', '2.8'],
-      ['#ffffff', '3.6'],
-      ['#ffffff', '4.5'],
-      ['#ffffff', '5.4'],
-      ['#ffffff', '6.3'],
-      ['#ffffff', '7.3'],
-      ['#ffffff', '8.2'],
-      ['#ffffff', '9.2'],
-      ['#ffffff', '10.2'],
-      ['#ffffff', '11.2'],
-      ['#ffffff', '12.2'],
-      ['#ffffff', '13.2']
+      ['#ffffff', '5.4', '-'],
+      ['#ffffff', '4.5', '-'],
+      ['#ffffff', '3.6', '-'],
+      ['#ffffff', '2.8', '-'],
+      ['#ffff00', '2.2', '3.8'],
+      ['#00ff00', '2', '3.4'],
+      ['#ffff00', '2.2', '3.8'],
+      ['#ffffff', '2.8', '-'],
+      ['#ffffff', '3.6', '-'],
+      ['#ffffff', '4.5', '-'],
+      ['#ffffff', '5.4', '-'],
+      ['#ffffff', '6.3', '-'],
+      ['#ffffff', '7.3', '-'],
+      ['#ffffff', '8.2', '-'],
+      ['#ffffff', '9.2', '-'],
+      ['#ffffff', '10.2', '-'],
+      ['#ffffff', '11.2', '-'],
+      ['#ffffff', '12.2', '-'],
+      ['#ffffff', '13.2', '-']
     ],
     [
-      ['#ffffff', '5.1'],
-      ['#ffffff', '4.1'],
-      ['#ffffff', '3.2'],
-      ['#ffff00', '2.2'],
-      ['#ffff00', '1.4'],
-      ['#00ff00', '1'],
-      ['#ffffff', '1.4'],
-      ['#ffffff', '2.2'],
-      ['#ffffff', '3.2'],
-      ['#ffffff', '4.1'],
-      ['#ffffff', '5.1'],
-      ['#ffffff', '6.1'],
-      ['#ffffff', '7.1'],
-      ['#ffffff', '8.1'],
-      ['#ffffff', '9.1'],
-      ['#ffffff', '10'],
-      ['#ffffff', '11'],
-      ['#ffffff', '12'],
-      ['#ffffff', '13']
+      ['#ffffff', '5.1', '-'],
+      ['#ffffff', '4.1', '-'],
+      ['#ffffff', '3.2', '-'],
+      ['#ffffff', '2.2', '-'],
+      ['#ffff00', '1.4', '4.8'],
+      ['#00ff00', '1', '4.4'],
+      ['#ffff00', '1.4', '4.8'],
+      ['#ffffff', '2.2', '-'],
+      ['#ffffff', '3.2', '-'],
+      ['#ffffff', '4.1', '-'],
+      ['#ffffff', '5.1', '-'],
+      ['#ffffff', '6.1', '-'],
+      ['#ffffff', '7.1', '-'],
+      ['#ffffff', '8.1', '-'],
+      ['#ffffff', '9.1', '-'],
+      ['#ffffff', '10', '-'],
+      ['#ffffff', '11', '-'],
+      ['#ffffff', '12', '-'],
+      ['#ffffff', '13', '-']
     ],
     [
-      ['#ffffff', '5'],
-      ['#ffffff', '4'],
-      ['#ffffff', '3'],
-      ['#ffffff', '2'],
-      ['#ffff00', '1'],
-      ['#ffff00', '0'],
-      ['#ffff00', '1'],
-      ['#ffffff', '2'],
-      ['#ffffff', '3'],
-      ['#ffffff', '4'],
-      ['#ffffff', '5'],
-      ['#ffffff', '6'],
-      ['#ffffff', '7'],
-      ['#ffffff', '8'],
-      ['#ffffff', '9'],
-      ['#ffffff', '10'],
-      ['#ffffff', '11'],
-      ['#ffffff', '12'],
-      ['#ffffff', '13']
+      ['#ffffff', '5', '-'],
+      ['#ffffff', '4', '-'],
+      ['#ffffff', '3', '-'],
+      ['#ffffff', '2', '-'],
+      ['#ffffff', '1', '-'],
+      ['#ff0000', '0', '5.4'],
+      ['#ffffff', '1', '-'],
+      ['#ffffff', '2', '-'],
+      ['#ffffff', '3', '-'],
+      ['#ffffff', '4', '-'],
+      ['#ffffff', '5', '-'],
+      ['#ffffff', '6', '-'],
+      ['#ffffff', '7', '-'],
+      ['#ffffff', '8', '-'],
+      ['#ffffff', '9', '-'],
+      ['#ffffff', '10', '-'],
+      ['#ffffff', '11', '-'],
+      ['#ffffff', '12', '-'],
+      ['#ffffff', '13', '-']
     ],
     [
-      ['#ffffff', '5.1'],
-      ['#ffffff', '4.1'],
-      ['#ffffff', '3.2'],
-      ['#ffffff', '2.2'],
-      ['#ffffff', '1.4'],
-      ['#ffffff', '1'],
-      ['#ffffff', '1.4'],
-      ['#ffffff', '2.2'],
-      ['#ffffff', '3.2'],
-      ['#ffffff', '4.1'],
-      ['#ffffff', '5.1'],
-      ['#ffffff', '6.1'],
-      ['#ffffff', '7.1'],
-      ['#ffffff', '8.1'],
-      ['#ffffff', '9.1'],
-      ['#ffffff', '10'],
-      ['#ffffff', '11'],
-      ['#ffffff', '12'],
-      ['#ffffff', '13']
+      ['#ffffff', '5.1', '-'],
+      ['#ffffff', '4.1', '-'],
+      ['#ffffff', '3.2', '-'],
+      ['#ffffff', '2.2', '-'],
+      ['#ffffff', '1.4', '-'],
+      ['#ffffff', '1', '-'],
+      ['#ffffff', '1.4', '-'],
+      ['#ffffff', '2.2', '-'],
+      ['#ffffff', '3.2', '-'],
+      ['#ffffff', '4.1', '-'],
+      ['#ffffff', '5.1', '-'],
+      ['#ffffff', '6.1', '-'],
+      ['#ffffff', '7.1', '-'],
+      ['#ffffff', '8.1', '-'],
+      ['#ffffff', '9.1', '-'],
+      ['#ffffff', '10', '-'],
+      ['#ffffff', '11', '-'],
+      ['#ffffff', '12', '-'],
+      ['#ffffff', '13', '-']
     ],
     [
-      ['#ffffff', '5.4'],
-      ['#ffffff', '4.5'],
-      ['#ffffff', '3.6'],
-      ['#ffffff', '2.8'],
-      ['#ffffff', '2.2'],
-      ['#ffffff', '2'],
-      ['#ffffff', '2.2'],
-      ['#ffffff', '2.8'],
-      ['#ffffff', '3.6'],
-      ['#ffffff', '4.5'],
-      ['#ffffff', '5.4'],
-      ['#ffffff', '6.3'],
-      ['#ffffff', '7.3'],
-      ['#ffffff', '8.2'],
-      ['#ffffff', '9.2'],
-      ['#ffffff', '10.2'],
-      ['#ffffff', '11.2'],
-      ['#ffffff', '12.2'],
-      ['#ffffff', '13.2']
+      ['#ffffff', '5.4', '-'],
+      ['#ffffff', '4.5', '-'],
+      ['#ffffff', '3.6', '-'],
+      ['#ffffff', '2.8', '-'],
+      ['#ffffff', '2.2', '-'],
+      ['#ffffff', '2', '-'],
+      ['#ffffff', '2.2', '-'],
+      ['#ffffff', '2.8', '-'],
+      ['#ffffff', '3.6', '-'],
+      ['#ffffff', '4.5', '-'],
+      ['#ffffff', '5.4', '-'],
+      ['#ffffff', '6.3', '-'],
+      ['#ffffff', '7.3', '-'],
+      ['#ffffff', '8.2', '-'],
+      ['#ffffff', '9.2', '-'],
+      ['#ffffff', '10.2', '-'],
+      ['#ffffff', '11.2', '-'],
+      ['#ffffff', '12.2', '-'],
+      ['#808080', '13.2', '-']
     ]
   ];
 
-  fillPixels(pixelArray, '1');
-
+  fillPixels();
   //by Elias Cuin
 </script>
 
