@@ -96,9 +96,13 @@ namespace AStar {
         _fields[y].push({
           coords: { x: x, y: y },
           type: value,
-          hCost: Math.sqrt(
-            Math.abs(endField.x - x) ** 2 + Math.abs(endField.y - y) ** 2
-          ),
+          // TODO test
+          hCost:
+            Math.round(
+              Math.sqrt(
+                Math.abs(endField.x - x) ** 2 + Math.abs(endField.y - y) ** 2
+              ) * 10
+            ) / 10,
 
           gCost: value === fieldType.startField ? 0 : infinity,
           connectedCoords: { x: -1, y: -1 },
@@ -113,18 +117,25 @@ namespace AStar {
   export function pathfinding(): Vector2d[] {
     let searchDepthCounter: number = 0;
     let foundEnd: boolean = false;
+    // the results in between
+    let middleTimeResults: { state1Fields: Field[]; state2Fields: Field[] }[] =
+      [];
+
+    // the main code
     while (true) {
       // get the current cheapest field
-      let currentCheapestField: Vector2d = cheapestTraversedField();
-      //console.log(fields[currentCheapestField.y][currentCheapestField.x]);
+      let currentCheapestField: Vector2d = currentCheapestExploredField();
 
       // explore the neighbour fields and search for end
-      if (expFlds(currentCheapestField) === true) {
+      if (exploreNeighbourFields(currentCheapestField) === true)
         foundEnd = true;
-        break;
-      }
 
-      if (++searchDepthCounter === 10000) break;
+      middleTimeResults.push({
+        state1Fields: getFields((f) => f.state === 1),
+        state2Fields: getFields((f) => f.state === 2)
+      });
+
+      if (++searchDepthCounter === 1000 || foundEnd) break;
     }
 
     if (foundEnd) return findPath().map((f) => f.coords);
@@ -147,31 +158,28 @@ namespace AStar {
     }
     */
 
-    //console.log(ar);
-
-    //console.log(
-    //  _getFields((f) => f.explored === 2).map((f) => f.coords).length
-    //);
-
     // #region private functions
     // returns the current cheapest field with an explored state bigger than 0 (was at least once traversed)
-    function cheapestTraversedField(): Vector2d {
+    function currentCheapestExploredField(): Vector2d {
       let cheapestField: Vector2d = startField; // the current cheapest field, starts everytime with the start field
-      const cheapestFCost: number = infinity;
+      let cheapestFCost: number = infinity;
 
       // only get fields with status 1
       const traversedFields: Field[] = getFields((f) => f.state === 1);
 
       // if the traversed field is cheaper, update it
       // TODO <= vs <
-      for (const tvField of traversedFields)
-        if (tvField.gCost + tvField.hCost <= cheapestFCost)
+      for (const tvField of traversedFields) {
+        if (tvField.gCost + tvField.hCost <= cheapestFCost) {
+          cheapestFCost = tvField.gCost + tvField.hCost;
           cheapestField = tvField.coords;
+        }
+      }
 
       return cheapestField;
     }
 
-    function expFlds(coords: Vector2d): boolean {
+    function exploreNeighbourFields(coords: Vector2d): boolean {
       // update current field state to traversed
       fields[coords.y][coords.x].state = 2;
 
@@ -259,12 +267,20 @@ namespace AStar {
       originCoords: Vector2d,
       gotoCoords: Vector2d
     ): number {
-      // TODO
+      // TODO TEST
+      /*
       const newFactor: number = Math.sqrt(
         Math.abs(originCoords.y - gotoCoords.y) ** 2 +
           Math.abs(originCoords.x - gotoCoords.x) ** 2
       );
       return fields[originCoords.y][originCoords.x].gCost + newFactor;
+      */
+      return (
+        fields[originCoords.y][originCoords.x].gCost +
+        (originCoords.y === gotoCoords.y || originCoords.x === gotoCoords.x
+          ? 1
+          : 1.4)
+      );
     }
     // #endregion
   }
