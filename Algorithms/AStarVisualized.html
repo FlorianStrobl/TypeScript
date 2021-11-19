@@ -44,8 +44,8 @@
     for (let y = 0; y < yLength; ++y)
       for (let x = 0; x < xLength; ++x)
         drawField(
-          x * scale,
-          y * scale,
+          x * scale + scale,
+          y * scale + scale,
           scale,
           data[y][x][0],
           data[y][x][1],
@@ -56,8 +56,18 @@
     ctx.fillStyle = '#000000';
     for (let y = 0; y <= yLength; ++y)
       for (let x = 0; x <= xLength; ++x) {
-        ctx.fillRect(x * scale, y * scale, 5, windowWidth);
-        ctx.fillRect(x * scale, y * scale, windowHeight, 5);
+        ctx.fillRect(
+          x * scale + scale,
+          y * scale + scale,
+          scale * 0.05,
+          windowWidth
+        );
+        ctx.fillRect(
+          x * scale + scale,
+          y * scale + scale,
+          windowHeight,
+          scale * 0.05
+        );
       }
   }
 
