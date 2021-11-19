@@ -111,9 +111,7 @@ namespace AStar {
           coords: { x: x, y: y },
           type: value,
           // TODO round
-          hCost: Math.sqrt(
-            Math.abs(endField.x - x) ** 2 + Math.abs(endField.y - y) ** 2
-          ),
+          hCost: infinity,
           gCost: value === fieldType.startField ? 0 : infinity,
           connectedCoords: { x: -1, y: -1 },
           state: value === fieldType.startField ? 2 : 0 // set the start field to traversed
@@ -163,6 +161,9 @@ namespace AStar {
       // if the traversed field is cheaper, update it
       // TODO <= vs <
       for (const tvField of traversedFields) {
+        fields[tvField.coords.y][tvField.coords.x].hCost = calculateHCost(
+          tvField.coords
+        );
         if (tvField.gCost + tvField.hCost <= cheapestFCost) {
           cheapestFCost = tvField.gCost + tvField.hCost;
           cheapestField = tvField.coords;
@@ -255,11 +256,12 @@ namespace AStar {
       originCoords: Vector2d,
       gotoCoords: Vector2d
     ): number {
-      const newFactor: number = Math.sqrt(
+      const oldCost: number = fields[originCoords.y][originCoords.x].gCost;
+      const newCost: number = Math.sqrt(
         Math.abs(originCoords.y - gotoCoords.y) ** 2 +
           Math.abs(originCoords.x - gotoCoords.x) ** 2
       );
-      return fields[originCoords.y][originCoords.x].gCost + newFactor;
+      return oldCost + newCost;
 
       // TODO round
       return (
@@ -267,6 +269,13 @@ namespace AStar {
         (originCoords.y === gotoCoords.y || originCoords.x === gotoCoords.x
           ? 1
           : 1.4)
+      );
+    }
+
+    function calculateHCost(coords: Vector2d): number {
+      return Math.sqrt(
+        Math.abs(endField.x - coords.x) ** 2 +
+          Math.abs(endField.y - coords.y) ** 2
       );
     }
     // #endregion
@@ -346,9 +355,10 @@ namespace AStar {
           break;
       }
 
-      pixelInfo[_f.coords.y][_f.coords.x][1] = (
-        Math.round(_f.hCost * 10) / 10
-      ).toString();
+      pixelInfo[_f.coords.y][_f.coords.x][1] =
+        _f.hCost !== infinity
+          ? (Math.round(_f.hCost * 10) / 10).toString()
+          : '-';
 
       pixelInfo[_f.coords.y][_f.coords.x][2] =
         _f.gCost !== infinity
