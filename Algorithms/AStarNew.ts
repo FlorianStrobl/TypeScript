@@ -52,6 +52,7 @@ namespace AStar {
   const e: number = 2; // end field
   const w: number = 3; // wall field
   const sw: number = 4; // small wall field (walls where you shouldn't be, but can start of)
+  const p: number = 5; // path (for the end)
 
   // the type of field
   enum fieldType {
@@ -59,7 +60,8 @@ namespace AStar {
     startField = s,
     endField = e,
     wallField = w,
-    smallWallField = sw
+    smallWallField = sw,
+    path = p
   }
 
   // was the field already scanned
@@ -72,8 +74,8 @@ namespace AStar {
   const fieldXLength: number = 19;
   const fieldYLength: number = 10;
 
-  const startField: Vector2d = { x: 4, y: 2 };
-  const endField: Vector2d = { x: 5, y: 7 };
+  export const startField: Vector2d = { x: 4, y: 2 };
+  export const endField: Vector2d = { x: 5, y: 7 };
 
   // initialize the field with these settings
   const fieldSettings: Vector2d[][] = [
@@ -96,14 +98,10 @@ namespace AStar {
         _fields[y].push({
           coords: { x: x, y: y },
           type: value,
-          // TODO test
-          hCost:
-            Math.round(
-              Math.sqrt(
-                Math.abs(endField.x - x) ** 2 + Math.abs(endField.y - y) ** 2
-              ) * 10
-            ) / 10,
-
+          // TODO round
+          hCost: Math.sqrt(
+            Math.abs(endField.x - x) ** 2 + Math.abs(endField.y - y) ** 2
+          ),
           gCost: value === fieldType.startField ? 0 : infinity,
           connectedCoords: { x: -1, y: -1 },
           state: value === fieldType.startField ? 2 : 0 // set the start field to traversed
@@ -141,23 +139,6 @@ namespace AStar {
     if (foundEnd) return findPath().map((f) => f.coords);
     else return [];
 
-    /*
-    let ar = [];
-    for (let y = 0; y < 19; ++y) {
-      ar.push([]);
-      for (let x = 0; x < 10; ++x) {
-        if (
-          (startField.x === x && startField.y === y) ||
-          (endField.x === x && endField.y === y)
-        )
-          ar[y].push('#ff0000');
-        else if (findPath().some((c) => c.coords.x === x && c.coords.y === y))
-          ar[y].push('#ff00ff');
-        else ar[y].push('#ffffff');
-      }
-    }
-    */
-
     // #region private functions
     // returns the current cheapest field with an explored state bigger than 0 (was at least once traversed)
     function currentCheapestExploredField(): Vector2d {
@@ -187,22 +168,14 @@ namespace AStar {
       // TODO what if was already traversed
       const neighbourFields: Vector2d[] = [
         { x: 1, y: 0 },
-        { x: 0, y: 1 },
-        { x: 1, y: 1 },
         { x: -1, y: 0 },
+        { x: 0, y: 1 },
         { x: 0, y: -1 },
-        { x: -1, y: -1 },
+        { x: 1, y: 1 },
         { x: 1, y: -1 },
-        { x: -1, y: 1 }
+        { x: -1, y: 1 },
+        { x: -1, y: -1 }
       ];
-
-      // value of current field
-      //const field: Field = fields[coords.y][coords.x];
-
-      // field.originCoords; variable
-      // field.gCost; variable
-
-      // field.explored; variable
 
       for (const neighbour of neighbourFields) {
         const _y: number = neighbour.y + coords.y;
@@ -237,7 +210,10 @@ namespace AStar {
                 fields[_y][_x].state = 1;
               }
             }
-            if (currField.type === e) return true;
+            if (currField.type === e) {
+              fields[_y][_x].state = 2;
+              return true;
+            }
             break;
         }
       }
@@ -267,14 +243,13 @@ namespace AStar {
       originCoords: Vector2d,
       gotoCoords: Vector2d
     ): number {
-      // TODO TEST
-      /*
       const newFactor: number = Math.sqrt(
         Math.abs(originCoords.y - gotoCoords.y) ** 2 +
           Math.abs(originCoords.x - gotoCoords.x) ** 2
       );
       return fields[originCoords.y][originCoords.x].gCost + newFactor;
-      */
+
+      // TODO round
       return (
         fields[originCoords.y][originCoords.x].gCost +
         (originCoords.y === gotoCoords.y || originCoords.x === gotoCoords.x
@@ -315,15 +290,77 @@ namespace AStar {
         if (filter(fields[y][x])) fieldArray.push(fields[y][x]);
     return fieldArray;
   }
+
+  export function toPixelInfo(path: Field[]): string[][][] {
+    const fields1: Field[] = getFields((f) => f.state === 0);
+
+    let pixelInfo: string[][][] = [];
+    for (let y = 0; y < fieldYLength; ++y) {
+      pixelInfo.push([]); // y dimension
+      for (let x = 0; x < fieldXLength; ++x) {
+        // x dimension
+        pixelInfo[y].push([]);
+
+        // infos of field
+        pixelInfo[y][x].push('color');
+        pixelInfo[y][x].push('info 1');
+      }
+    }
+
+    for (const _f of path) {
+      // color
+      switch (_f.type) {
+        case n:
+          pixelInfo[_f.coords.y][_f.coords.x][0] = '#ffffff';
+          break;
+        case s:
+          pixelInfo[_f.coords.y][_f.coords.x][0] = '#0000ff';
+          break;
+        case e:
+          pixelInfo[_f.coords.y][_f.coords.x][0] = '#ff0000';
+          break;
+        case w:
+          pixelInfo[_f.coords.y][_f.coords.x][0] = '#ff00ff';
+          break;
+        case p:
+          pixelInfo[_f.coords.y][_f.coords.x][0] = '#00ff00';
+          break;
+        case 6:
+          pixelInfo[_f.coords.y][_f.coords.x][0] = '#ffff00';
+          break;
+        default:
+          pixelInfo[_f.coords.y][_f.coords.x][0] = '#ffffff';
+          break;
+      }
+
+      pixelInfo[_f.coords.y][_f.coords.x][1] = (
+        Math.round(_f.hCost * 10) / 10
+      ).toString();
+    }
+
+    return pixelInfo;
+  }
 }
 
 const path: Vector2d[] = AStar.pathfinding();
 AStar.getFields((f) => {
-  if (path.some((_f) => _f.x === f.coords.x && _f.y === f.coords.y))
-    AStar.fields[f.coords.y][f.coords.x].type = 4;
+  if (
+    path.some(
+      (_f) =>
+        _f.x === f.coords.x &&
+        _f.y === f.coords.y &&
+        !(
+          (_f.x === AStar.startField.x && _f.y === AStar.startField.y) ||
+          (_f.x === AStar.endField.x && +_f.y === AStar.endField.y)
+        )
+    )
+  )
+    AStar.fields[f.coords.y][f.coords.x].type = 5; // path field
+  if (f.state === 1) AStar.fields[f.coords.y][f.coords.x].type = 6; // test field
   return false;
 });
 console.log(AStar.draw(AStar.fields));
+console.log(AStar.toPixelInfo(AStar.getFields(() => true)));
 
 namespace LegoRoboter {
   // motors.getAllMotorData()[0].actualSpeed: number
