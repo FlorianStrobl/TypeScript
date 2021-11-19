@@ -146,7 +146,7 @@ namespace AStar {
           hCost: infinity,
           gCost: value === fieldType.startField ? 0 : infinity,
           connectedCoords: { x: -1, y: -1 },
-          state: value === fieldType.startField ? 2 : 0 // set the start field to traversed
+          state: value === fieldType.startField ? 1 : 0 // set the start field to traversed
         });
       }
     }
@@ -155,7 +155,7 @@ namespace AStar {
   // #endregion
 
   export function pathfinding(): Vector2d[] {
-    let searchDepthCounter: number = 100;
+    let searchDepthCounter: number = 178 + 1;
     let foundEnd: boolean = false;
     // the results in between
     let middleTimeResults: { state1Fields: Field[]; state2Fields: Field[] }[] =
@@ -166,8 +166,11 @@ namespace AStar {
       // get the current cheapest field
       let currentCheapestField: Vector2d = currentCheapestExploredField();
 
-      // explore the neighbour fields and search for end
+      // avoid restarting from the begining if every field was checked
+      if (currentCheapestField.x === -1 && currentCheapestField.y === -1) break;
+
       if (exploreNeighbourFields(currentCheapestField) === true)
+        // explore the neighbour fields and search for end
         foundEnd = true;
 
       middleTimeResults.push({
@@ -184,7 +187,7 @@ namespace AStar {
     // #region private functions
     // returns the current cheapest field with an explored state bigger than 0 (was at least once traversed)
     function currentCheapestExploredField(): Vector2d {
-      let cheapestField: Vector2d = startField; // the current cheapest field, starts everytime with the start field
+      let cheapestField: Vector2d = { x: -1, y: -1 }; // the current cheapest field, starts everytime with the start field
       let cheapestFCost: number = infinity;
 
       // only get fields with status 1
