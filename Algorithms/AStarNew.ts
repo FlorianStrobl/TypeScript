@@ -90,23 +90,39 @@ namespace AStar {
       { x: w, y: -1 }
     ],
     [
-      { x: 4, y: 3 }, // coords start
+      { x: 4, y: 3 }, // start wall
       { x: w, y: -1 }
     ],
     [
-      { x: 5, y: 8 }, // coords start
+      { x: 5, y: 8 }, // end wall
       { x: w, y: -1 }
     ],
     [
-      { x: 4, y: 8 }, // coords start
+      { x: 4, y: 8 }, // end wall
       { x: w, y: -1 }
     ],
     [
-      { x: 5, y: 6 }, // coords start
+      { x: 5, y: 6 }, // end wall
       { x: w, y: -1 }
     ],
     [
-      { x: 4, y: 7 }, // coords start
+      { x: 4, y: 7 }, // end wall
+      { x: w, y: -1 }
+    ],
+    [
+      { x: 6, y: 7 }, // end wall
+      { x: w, y: -1 }
+    ],
+    [
+      { x: 6, y: 8 }, // end wall
+      { x: w, y: -1 }
+    ],
+    [
+      { x: 6, y: 6 }, // end wall
+      { x: w, y: -1 }
+    ],
+    [
+      { x: 4, y: 6 }, // end wall
       { x: w, y: -1 }
     ]
   ];
@@ -139,7 +155,7 @@ namespace AStar {
   // #endregion
 
   export function pathfinding(): Vector2d[] {
-    let searchDepthCounter: number = 1000;
+    let searchDepthCounter: number = 100;
     let foundEnd: boolean = false;
     // the results in between
     let middleTimeResults: { state1Fields: Field[]; state2Fields: Field[] }[] =
@@ -371,7 +387,7 @@ namespace AStar {
         case 7:
           if (!_path.some((i) => i.x === _f.coords.x && i.y === _f.coords.y))
             color = '#00ffff';
-          else color = '#ffff00';
+          else color = '#00ff00';
           break;
       }
 
@@ -407,15 +423,22 @@ AStar.getFields((f) => {
   )
     AStar.fields[f.coords.y][f.coords.x].type = 5; // path field
   // test field
-  if (f.state === 1) AStar.fields[f.coords.y][f.coords.x].type = 6;
-  else if (f.state === 2) AStar.fields[f.coords.y][f.coords.x].type = 7; // test field
+  if (
+    !(
+      (f.coords.x === AStar.startField.x &&
+        f.coords.y === AStar.startField.y) ||
+      (f.coords.x === AStar.endField.x && +f.coords.y === AStar.endField.y)
+    )
+  )
+    if (f.state === 1) AStar.fields[f.coords.y][f.coords.x].type = 6;
+    else if (f.state === 2) AStar.fields[f.coords.y][f.coords.x].type = 7; // test field
   return false;
 });
 console.log(AStar.draw(AStar.fields));
 console.log(
   AStar.toPixelInfo(
     AStar.getFields(() => true),
-    path
+    path.slice(1, -1)
   )
 );
 
