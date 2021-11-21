@@ -31,6 +31,9 @@ interface Vector2d {
   y: number;
 }
 
+//import * as fs from 'fs';
+//const test = require('fs');
+
 // Number.POSITIVE_INFINITY alias
 // TODO remove
 const infinity: number = 9999999999;
@@ -71,11 +74,11 @@ namespace AStar {
     traversed = 2 // was already explored and once the cheapest field
   }
 
-  const fieldXLength: number = 16;
-  const fieldYLength: number = 9;
+  const fieldXLength: number = 500;
+  const fieldYLength: number = 500;
 
   export const startField: Vector2d = { x: 4, y: 2 };
-  export const endField: Vector2d = { x: 5, y: 7 };
+  export const endField: Vector2d = { x: 274, y: 163 };
 
   // initialise the field with these walls with these settings
   export const wallFields: Vector2d[][] = [
@@ -492,9 +495,9 @@ namespace LegoRoboter {
 const path: Vector2d[] = AStar.pathfinding();
 AStar.updateFields(path);
 console.log(AStar.draw(AStar.fields));
-console.log(
-  AStar.toPixelInfo(
-    AStar.getFields(() => true),
-    path.slice(1, -1)
-  )
-);
+//console.log(
+//  AStar.toPixelInfo(
+//    AStar.getFields(() => true),
+//    path.slice(1, -1)
+//  )
+//);
