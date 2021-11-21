@@ -12,13 +12,39 @@
   const windowHeight = 1010;
   const xLength = 19;
   const yLength = 10;
-  const scale = 90;
+  const fieldScale = 90;
 
   const c = document.getElementById('shower');
   const ctx = c.getContext('2d');
+  const cRect = c.getBoundingClientRect();
+  c.addEventListener('mousemove', onMouseMovement);
+  c.onmouseup = onMouseClickUp;
+
+  let oldFieldCoords; // for the hover animation
+  let newWallFields = [];
+
+  function drawMain(data = fieldInfos) {
+    console.log('exec 1');
+    // fields itself
+    for (let y = 0; y < yLength; ++y)
+      for (let x = 0; x < xLength; ++x)
+        drawField(
+          x * fieldScale + fieldScale,
+          y * fieldScale + fieldScale,
+          fieldScale,
+          data[y][x][0],
+          data[y][x][1],
+          data[y][x][2]
+        );
+
+    drawGrid();
+    drawGridAxes();
+  }
 
   function drawField(x, y, size, color, text1, text2) {
-    // pixel
+    console.log('exec 2');
+
+    // field pixel
     ctx.fillStyle = color;
     ctx.fillRect(x, y, size, size);
 
@@ -39,243 +65,399 @@
     }
   }
 
-  function fillPixels(data = fieldInfos) {
-    // pixel itself
-    for (let y = 0; y < yLength; ++y)
-      for (let x = 0; x < xLength; ++x)
-        drawField(
-          x * scale + scale,
-          y * scale + scale,
-          scale,
-          data[y][x][0],
-          data[y][x][1],
-          data[y][x][2]
-        );
-
+  function drawGrid() {
     // grid
     ctx.fillStyle = '#000000';
-
+    // x grid
     for (let y = 0; y <= yLength; ++y)
-      ctx.fillRect(scale, y * scale + scale, scale * xLength, scale * 0.05);
-
+      ctx.fillRect(
+        fieldScale,
+        y * fieldScale + fieldScale,
+        fieldScale * xLength,
+        fieldScale * 0.05
+      );
+    // y grid
     for (let x = 0; x <= xLength; ++x)
-      ctx.fillRect(x * scale + scale, scale, scale * 0.05, yLength * scale);
+      ctx.fillRect(
+        x * fieldScale + fieldScale,
+        fieldScale,
+        fieldScale * 0.05,
+        yLength * fieldScale
+      );
   }
 
-  fieldInfos = [
+  function drawGridAxes() {
+    // coordinate system
+    ctx.font = '20px Georgia';
+    ctx.fillStyle = '#000000';
+    for (let x = 0; x < xLength; ++x)
+      ctx.fillText(
+        x,
+        x * fieldScale + fieldScale + fieldScale / 2 - x.toString() / 2,
+        fieldScale - 10
+      );
+    for (let y = 0; y < yLength; ++y)
+      ctx.fillText(
+        y,
+        fieldScale - 20,
+        y * fieldScale + fieldScale + fieldScale / 2
+      );
+  }
+
+  // for hover animation
+  function drawFieldBorder(
+    x,
+    y,
+    color = '#000000',
+    size = 10,
+    gridStyle = false
+  ) {
+    ctx.fillStyle = color;
+    // upper line
+    ctx.fillRect((x + 1) * fieldScale, (y + 1) * fieldScale, fieldScale, size);
+
+    // left line
+    ctx.fillRect((x + 1) * fieldScale, (y + 1) * fieldScale, size, fieldScale);
+
+    // right line
+    ctx.fillRect(
+      (x + 1) * fieldScale + fieldScale - size / 2,
+      (y + 1) * fieldScale,
+      size,
+      fieldScale
+    );
+
+    // bottom line
+    ctx.fillRect(
+      (x + 1) * fieldScale,
+      (y + 1) * fieldScale + fieldScale - size / 2,
+      fieldScale,
+      size
+    );
+  }
+
+  // hover animation
+  function onMouseMovement(event) {
+    const mouseX = Math.round(event.clientX - cRect.left);
+    const mouseY = Math.round(event.clientY - cRect.top);
+    const fieldCoords = {
+      x: Math.floor(mouseX / fieldScale) - 1,
+      y: Math.floor(mouseY / fieldScale) - 1
+    };
+
+    // check bounces
+    if (
+      fieldCoords.x < 0 ||
+      fieldCoords.x >= xLength ||
+      fieldCoords.y < 0 ||
+      fieldCoords.y >= yLength
+    )
+      return;
+
+    // check if it is a new field
+    const isNewField =
+      oldFieldCoords === undefined ||
+      oldFieldCoords.x !== fieldCoords.x ||
+      oldFieldCoords.y !== fieldCoords.y;
+    if (!isNewField) return;
+
+    drawFieldBorder(fieldCoords.x, fieldCoords.y);
+    if (oldFieldCoords !== undefined) {
+      // TODO
+      // setField(oldFieldCoords.x, oldFieldCoords.y);
+
+      // remove border completely
+      drawFieldBorder(
+        oldFieldCoords.x,
+        oldFieldCoords.y,
+        fieldInfos[oldFieldCoords.y][oldFieldCoords.x][0] // color
+      );
+
+      // add grid again
+      drawGrid();
+    }
+
+    // TODO, change field color on hover
+    /*
+    drawField(
+      fieldCoords.x * scale + scale,
+      fieldCoords.y * scale + scale,
+      scale,
+      '#ffffff',
+      fieldInfos[fieldCoords.y][fieldCoords.x][1],
+      fieldInfos[fieldCoords.y][fieldCoords.x][2]
+    );
+    */
+
+    oldFieldCoords = fieldCoords;
+  }
+
+  // add/remove walls
+  function onMouseClickUp(event) {
+    const mouseX = Math.round(event.clientX - cRect.left);
+    const mouseY = Math.round(event.clientY - cRect.top);
+    const fieldCoords = {
+      x: Math.floor(mouseX / fieldScale) - 1,
+      y: Math.floor(mouseY / fieldScale) - 1
+    };
+
+    // check bounces
+    if (
+      fieldCoords.x < 0 ||
+      fieldCoords.x >= xLength ||
+      fieldCoords.y < 0 ||
+      fieldCoords.y >= yLength
+    )
+      return;
+
+    // check if already in list, if not add it to new walls
+    const fieldIndex = newWallFields.findIndex(
+      (w) => w.x === fieldCoords.x && w.y === fieldCoords.y
+    );
+    if (fieldIndex === -1) {
+      // add field to wall array
+      newWallFields.push({ x: fieldCoords.x, y: fieldCoords.y });
+
+      // update color
+      setField(fieldCoords.x, fieldCoords.y, '#808080');
+      drawGrid();
+      drawFieldBorder(fieldCoords.x, fieldCoords.y);
+    } else {
+      // remove from walls array
+      newWallFields.splice(fieldIndex, 1);
+
+      // reset color
+      setField(fieldCoords.x, fieldCoords.y);
+      drawGrid();
+      drawFieldBorder(fieldCoords.x, fieldCoords.y);
+    }
+  }
+
+  function setField(fieldX, fieldY, color) {
+    drawField(
+      fieldX * fieldScale + fieldScale,
+      fieldY * fieldScale + fieldScale,
+      fieldScale,
+      color === undefined ? fieldInfos[fieldY][fieldX][0] : color,
+      fieldInfos[fieldY][fieldX][1],
+      fieldInfos[fieldY][fieldX][2]
+    );
+  }
+
+  const fieldInfos = [
     [
-      ['#808080', '-', '-'],
-      ['#00ffff', '8.1', '3.8'],
-      ['#00ffff', '7.6', '2.8'],
-      ['#00ffff', '7.3', '2.4'],
-      ['#00ffff', '7.1', '2'],
-      ['#00ffff', '7', '2.4'],
-      ['#00ffff', '7.1', '2.8'],
-      ['#00ffff', '7.3', '3.8'],
-      ['#00ffff', '7.6', '4.8'],
-      ['#00ffff', '8.1', '5.8'],
-      ['#00ffff', '8.6', '6.8'],
-      ['#00ffff', '9.2', '7.8'],
-      ['#00ffff', '9.9', '8.8'],
-      ['#00ffff', '10.6', '9.8'],
-      ['#00ffff', '11.4', '10.8'],
-      ['#00ffff', '12.2', '11.8'],
-      ['#00ffff', '13', '12.8'],
-      ['#00ffff', '13.9', '13.8'],
-      ['#00ffff', '14.8', '14.8']
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-']
     ],
     [
-      ['#00ffff', '7.8', '4.4'],
-      ['#00ffff', '7.2', '3.4'],
-      ['#00ffff', '6.7', '2.4'],
-      ['#00ffff', '6.3', '1.4'],
-      ['#00ffff', '6.1', '1'],
-      ['#00ffff', '6', '1.4'],
-      ['#00ffff', '6.1', '2.4'],
-      ['#00ffff', '6.3', '3.4'],
-      ['#00ffff', '6.7', '4.4'],
-      ['#00ffff', '7.2', '5.4'],
-      ['#00ffff', '7.8', '6.4'],
-      ['#00ffff', '8.5', '7.4'],
-      ['#00ffff', '9.2', '8.4'],
-      ['#00ffff', '10', '9.4'],
-      ['#00ffff', '10.8', '10.4'],
-      ['#00ffff', '11.7', '11.4'],
-      ['#00ffff', '12.5', '12.4'],
-      ['#00ffff', '13.4', '13.4'],
-      ['#00ffff', '14.3', '14.4']
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffff00', '6.3', '1.4'],
+      ['#ffff00', '6.1', '1'],
+      ['#ffff00', '6', '1.4'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-']
     ],
     [
-      ['#00ffff', '7.1', '4'],
-      ['#00ffff', '6.4', '3'],
-      ['#00ffff', '5.8', '2'],
-      ['#00ffff', '5.4', '1'],
-      ['#0000ff', '-', '0'],
-      ['#00ffff', '5', '1'],
-      ['#00ffff', '5.1', '2'],
-      ['#00ffff', '5.4', '3'],
-      ['#00ffff', '5.8', '4'],
-      ['#00ffff', '6.4', '5'],
-      ['#00ffff', '7.1', '6'],
-      ['#00ffff', '7.8', '7'],
-      ['#00ffff', '8.6', '8'],
-      ['#00ffff', '9.4', '9'],
-      ['#00ffff', '10.3', '10'],
-      ['#00ffff', '11.2', '11'],
-      ['#00ffff', '12.1', '12'],
-      ['#00ffff', '13', '13'],
-      ['#00ffff', '13.9', '14']
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffff00', '5.4', '1'],
+      ['#0000ff', '5.1', '0'],
+      ['#ffff00', '5', '1'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-']
     ],
     [
-      ['#00ffff', '6.4', '4.4'],
-      ['#00ffff', '5.7', '3.4'],
-      ['#00ffff', '5', '2.4'],
-      ['#00ffff', '4.5', '1.4'],
-      ['#808080', '-', '-'],
-      ['#00ffff', '4', '1.4'],
-      ['#00ffff', '4.1', '2.4'],
-      ['#00ffff', '4.5', '3.4'],
-      ['#00ffff', '5', '4.4'],
-      ['#00ffff', '5.7', '5.4'],
-      ['#00ffff', '6.4', '6.4'],
-      ['#00ffff', '7.2', '7.4'],
-      ['#00ffff', '8.1', '8.4'],
-      ['#00ffff', '8.9', '9.4'],
-      ['#00ffff', '9.8', '10.4'],
-      ['#00ffff', '10.8', '11.4'],
-      ['#00ffff', '11.7', '12.4'],
-      ['#00ffff', '12.6', '13.4'],
-      ['#00ffff', '13.6', '14.4']
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffff00', '4.5', '1.4'],
+      ['#00ff00', '4.1', '1'],
+      ['#ffff00', '4', '1.4'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-']
     ],
     [
-      ['#00ffff', '5.8', '4.8'],
-      ['#00ffff', '5', '3.8'],
-      ['#00ffff', '4.2', '2.8'],
-      ['#00ffff', '3.6', '2.4'],
-      ['#00ffff', '3.2', '2.8'],
-      ['#00ffff', '3', '2.4'],
-      ['#00ffff', '3.2', '2.8'],
-      ['#00ffff', '3.6', '3.8'],
-      ['#00ffff', '4.2', '4.8'],
-      ['#00ffff', '5', '5.8'],
-      ['#00ffff', '5.8', '6.8'],
-      ['#00ffff', '6.7', '7.8'],
-      ['#00ffff', '7.6', '8.8'],
-      ['#00ffff', '8.5', '9.8'],
-      ['#00ffff', '9.5', '10.8'],
-      ['#00ffff', '10.4', '11.8'],
-      ['#00ffff', '11.4', '12.8'],
-      ['#00ffff', '12.4', '13.8'],
-      ['#00ffff', '13.3', '14.8']
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffff00', '3.6', '2.4'],
+      ['#00ff00', '3.2', '2'],
+      ['#ffff00', '3', '2.4'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-']
     ],
     [
-      ['#00ffff', '5.4', '5.2'],
-      ['#00ffff', '4.5', '4.2'],
-      ['#00ffff', '3.6', '3.8'],
-      ['#00ffff', '2.8', '3.4'],
-      ['#00ffff', '2.2', '3.8'],
-      ['#00ffff', '2', '3.4'],
-      ['#00ffff', '2.2', '3.8'],
-      ['#00ffff', '2.8', '4.2'],
-      ['#00ffff', '3.6', '5.2'],
-      ['#00ffff', '4.5', '6.2'],
-      ['#00ffff', '5.4', '7.2'],
-      ['#00ffff', '6.3', '8.2'],
-      ['#00ffff', '7.3', '9.2'],
-      ['#00ffff', '8.2', '10.2'],
-      ['#00ffff', '9.2', '11.2'],
-      ['#00ffff', '10.2', '12.2'],
-      ['#00ffff', '11.2', '13.2'],
-      ['#00ffff', '12.2', '14.2'],
-      ['#00ffff', '13.2', '15.2']
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffff00', '2.8', '3.4'],
+      ['#00ff00', '2.2', '3'],
+      ['#ffff00', '2', '3.4'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-']
     ],
     [
-      ['#00ffff', '5.1', '5.7'],
-      ['#00ffff', '4.1', '5.2'],
-      ['#00ffff', '3.2', '4.8'],
-      ['#00ffff', '2.2', '4.4'],
-      ['#808080', '-', '-'],
-      ['#808080', '-', '-'],
-      ['#808080', '-', '-'],
-      ['#00ffff', '2.2', '5.2'],
-      ['#00ffff', '3.2', '5.7'],
-      ['#00ffff', '4.1', '6.7'],
-      ['#00ffff', '5.1', '7.7'],
-      ['#00ffff', '6.1', '8.7'],
-      ['#00ffff', '7.1', '9.7'],
-      ['#00ffff', '8.1', '10.7'],
-      ['#00ffff', '9.1', '11.7'],
-      ['#00ffff', '10', '12.7'],
-      ['#00ffff', '11', '13.7'],
-      ['#00ffff', '12', '14.7'],
-      ['#00ffff', '13', '15.7']
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffff00', '2.2', '4.4'],
+      ['#ffff00', '1.4', '4'],
+      ['#00ff00', '1', '4.4'],
+      ['#ffff00', '-', '5.4'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-']
     ],
     [
-      ['#00ffff', '5', '6.7'],
-      ['#00ffff', '4', '6.2'],
-      ['#00ffff', '3', '5.8'],
-      ['#00ffff', '2', '5.4'],
-      ['#808080', '-', '-'],
-      ['#ff0000', '-', '-'],
-      ['#808080', '-', '-'],
-      ['#00ffff', '2', '6.2'],
-      ['#00ffff', '3', '6.7'],
-      ['#00ffff', '4', '7.1'],
-      ['#00ffff', '5', '8.1'],
-      ['#00ffff', '6', '9.1'],
-      ['#00ffff', '7', '10.1'],
-      ['#00ffff', '8', '11.1'],
-      ['#00ffff', '9', '12.1'],
-      ['#00ffff', '10', '13.1'],
-      ['#00ffff', '11', '14.1'],
-      ['#00ffff', '12', '15.1'],
-      ['#00ffff', '13', '16.1']
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ff0000', '-', '5.4'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-']
     ],
     [
-      ['#00ffff', '5.1', '7.7'],
-      ['#00ffff', '4.1', '7.2'],
-      ['#00ffff', '3.2', '6.8'],
-      ['#00ffff', '2.2', '6.4'],
-      ['#808080', '-', '-'],
-      ['#808080', '-', '-'],
-      ['#808080', '-', '-'],
-      ['#00ffff', '2.2', '7.2'],
-      ['#00ffff', '3.2', '7.7'],
-      ['#00ffff', '4.1', '8.1'],
-      ['#00ffff', '5.1', '8.5'],
-      ['#00ffff', '6.1', '9.5'],
-      ['#00ffff', '7.1', '10.5'],
-      ['#00ffff', '8.1', '11.5'],
-      ['#00ffff', '9.1', '12.5'],
-      ['#00ffff', '10', '13.5'],
-      ['#00ffff', '11', '14.5'],
-      ['#00ffff', '12', '15.5'],
-      ['#00ffff', '13', '16.5']
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-']
     ],
     [
-      ['#00ffff', '5.4', '8.7'],
-      ['#00ffff', '4.5', '8.2'],
-      ['#00ffff', '3.6', '7.8'],
-      ['#00ffff', '2.8', '7.4'],
-      ['#00ffff', '2.2', '7.8'],
-      ['#00ffff', '2', '8.8'],
-      ['#00ffff', '2.2', '8.7'],
-      ['#00ffff', '2.8', '8.2'],
-      ['#00ffff', '3.6', '8.7'],
-      ['#00ffff', '4.5', '9.1'],
-      ['#00ffff', '5.4', '9.5'],
-      ['#00ffff', '6.3', '9.9'],
-      ['#00ffff', '7.3', '10.9'],
-      ['#00ffff', '8.2', '11.9'],
-      ['#00ffff', '9.2', '12.9'],
-      ['#00ffff', '10.2', '13.9'],
-      ['#00ffff', '11.2', '14.9'],
-      ['#00ffff', '12.2', '15.9'],
-      ['#808080', '-', '-']
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-']
     ]
   ];
 
-  fillPixels();
+  drawMain();
   //by Elias Cuin
 </script>
 
