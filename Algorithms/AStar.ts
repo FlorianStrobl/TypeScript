@@ -31,8 +31,6 @@ interface Vector2d {
   y: number;
 }
 
-import * as fs from 'fs';
-
 // Number.POSITIVE_INFINITY alias
 // TODO remove
 const infinity: number = 9999999999;
@@ -73,14 +71,26 @@ namespace AStar {
     traversed = 2 // was already explored and once the cheapest field
   }
 
-  const fieldXLength: number = 30;
-  const fieldYLength: number = 30;
+  const fieldXLength: number = 20;
+  const fieldYLength: number = 15;
 
   export const startField: Vector2d = { x: 0, y: 0 };
   export const endField: Vector2d = { x: 15, y: 8 };
 
   // initialise the field with these walls with these settings
   export const wallFields: Vector2d[][] = [
+    [
+      { x: 10, y: 6 },
+      { x: w, y: -1 }
+    ],
+    [
+      { x: 11, y: 5 },
+      { x: w, y: -1 }
+    ],
+    [
+      { x: 12, y: 4 },
+      { x: w, y: -1 }
+    ]
     /*
     [
       { x: 0, y: 0 }, // coord 1
@@ -378,11 +388,12 @@ namespace AStar {
     });
   }
 
-  export function getFields(filter: (field: Field) => boolean): Field[] {
+  export function getFields(filter?: (field: Field) => boolean): Field[] {
     let fieldArray: Field[] = [];
     for (let y = 0; y < fieldYLength; ++y)
       for (let x = 0; x < fieldXLength; ++x)
-        if (filter(fields[y][x])) fieldArray.push(fields[y][x]);
+        if (filter === undefined || filter(fields[y][x]))
+          fieldArray.push(fields[y][x]);
     return fieldArray;
   }
 
@@ -493,28 +504,9 @@ namespace LegoRoboter {
 }
 
 const path: Vector2d[] = AStar.pathfinding();
-console.log(path.length);
 AStar.updateFields(path);
 
-fs.writeFileSync('test.txt', AStar.draw(AStar.fields), 'utf8');
-
-const pxlInfo = AStar.toPixelInfo(
-  AStar.getFields(() => true),
-  path.slice(1, -1)
-);
-let str: string = '[\n\t';
-for (let i = 0; i < pxlInfo.length; ++i) {
-  str += '[\n\t\t';
-  for (let ii = 0; ii < pxlInfo[i].length; ++ii)
-    str += `['${pxlInfo[i][ii][0]}', '${pxlInfo[i][ii][1]}', '${pxlInfo[i][ii][2]}'],\n\t\t`;
-  str += '],\n';
-}
-str += '\n]';
-fs.writeFileSync('test2.txt', str.toString(), 'utf8');
-
-//console.log(
-//  AStar.toPixelInfo(
-//    AStar.getFields(() => true),
-//    path.slice(1, -1)
-//  )
-//);
+console.log(path.length);
+//console.log(AStar.getFields());
+//console.log(AStar.draw(AStar.fields));
+console.log(AStar.toPixelInfo(AStar.getFields(), path.slice(1, -1)));
