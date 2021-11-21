@@ -27,15 +27,7 @@
     console.log('exec 1');
     // fields itself
     for (let y = 0; y < yLength; ++y)
-      for (let x = 0; x < xLength; ++x)
-        drawField(
-          x * fieldScale + fieldScale,
-          y * fieldScale + fieldScale,
-          fieldScale,
-          data[y][x][0],
-          data[y][x][1],
-          data[y][x][2]
-        );
+      for (let x = 0; x < xLength; ++x) setField(x, y, data[y][x][0], false);
 
     drawGrid();
     drawGridAxes();
@@ -161,33 +153,24 @@
       oldFieldCoords.y !== fieldCoords.y;
     if (!isNewField) return;
 
+    // TODO, change field color on hover
+    //setField(fieldCoords.x, fieldCoords.y, '#101010');
+
+    // add a border to the current field
     drawFieldBorder(fieldCoords.x, fieldCoords.y);
+
+    // reset the last field border
     if (oldFieldCoords !== undefined) {
       // TODO
-      // setField(oldFieldCoords.x, oldFieldCoords.y);
-
-      // remove border completely
-      drawFieldBorder(
-        oldFieldCoords.x,
-        oldFieldCoords.y,
-        fieldInfos[oldFieldCoords.y][oldFieldCoords.x][0] // color
-      );
-
-      // add grid again
-      drawGrid();
+      let _color = fieldInfos[oldFieldCoords.y][oldFieldCoords.x][0];
+      if (
+        newWallFields.some(
+          (w) => w.x === oldFieldCoords.x && w.y === oldFieldCoords.y
+        )
+      )
+        _color = '#808080';
+      setField(oldFieldCoords.x, oldFieldCoords.y, _color);
     }
-
-    // TODO, change field color on hover
-    /*
-    drawField(
-      fieldCoords.x * scale + scale,
-      fieldCoords.y * scale + scale,
-      scale,
-      '#ffffff',
-      fieldInfos[fieldCoords.y][fieldCoords.x][1],
-      fieldInfos[fieldCoords.y][fieldCoords.x][2]
-    );
-    */
 
     oldFieldCoords = fieldCoords;
   }
@@ -220,7 +203,6 @@
 
       // update color
       setField(fieldCoords.x, fieldCoords.y, '#808080');
-      drawGrid();
       drawFieldBorder(fieldCoords.x, fieldCoords.y);
     } else {
       // remove from walls array
@@ -228,12 +210,11 @@
 
       // reset color
       setField(fieldCoords.x, fieldCoords.y);
-      drawGrid();
       drawFieldBorder(fieldCoords.x, fieldCoords.y);
     }
   }
 
-  function setField(fieldX, fieldY, color) {
+  function setField(fieldX, fieldY, color, _drawGrid = true) {
     drawField(
       fieldX * fieldScale + fieldScale,
       fieldY * fieldScale + fieldScale,
@@ -242,6 +223,7 @@
       fieldInfos[fieldY][fieldX][1],
       fieldInfos[fieldY][fieldX][2]
     );
+    if (_drawGrid) drawGrid();
   }
 
   const fieldInfos = [
