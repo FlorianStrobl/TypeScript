@@ -244,7 +244,7 @@ namespace AStar {
       for (const neighbour of neighbourFields) {
         const _y: number = neighbour.y + coords.y;
         const _x: number = neighbour.x + coords.x;
-        // check bounces
+        // check boundes
         if (_y < 0 || _x < 0 || _y >= fieldYLength || _x >= fieldXLength)
           continue;
         const currField: Field = fields[_y][_x];
