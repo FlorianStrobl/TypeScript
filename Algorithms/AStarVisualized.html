@@ -3,31 +3,36 @@
 <html>
   <head> </head>
   <body>
-    <canvas id="canvas" width="2010px" height="1510px"></canvas>
+    <canvas id="canvas" width="100px" height="100px"></canvas>
   </body>
 </html>
 
 <script>
   const xLength = 10;
   const yLength = 10;
-  const windowWidth = xLength * 100 + 10;
-  const windowHeight = yLength * 100 + 10;
   const fieldScale = 90;
+  const windowWidth = xLength * 100 + fieldScale;
+  const windowHeight = yLength * 100 + fieldScale;
 
   // 0: wall, 1: start, 2: goal
   let mouseVal = 0;
 
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
-  ctx.width = windowWidth;
-  ctx.height = windowHeight;
+  canvas.width = windowWidth;
+  canvas.height = windowHeight;
+
   const cRect = canvas.getBoundingClientRect();
+
   canvas.addEventListener('mousemove', onMouseMovement);
   canvas.onmouseup = onMouseClickUp;
-  canvas.onKeyUp = onKeyUp;
 
-  let oldFieldCoords; // for the hover animation
+  document.addEventListener('keydown', (ev) => onKeyUp(ev));
+
+  let oldFieldCoords = undefined; // for the hover animation
   let newWallFields = [];
+  let newStartField = undefined;
+  let newGoalField = undefined;
 
   function drawMain(data = fieldInfos) {
     console.log('exec 1');
@@ -175,6 +180,18 @@
         )
       )
         _color = '#808080';
+      else if (
+        newStartField !== undefined &&
+        newStartField.x === oldFieldCoords.x &&
+        newStartField.y === oldFieldCoords.y
+      )
+        _color = '#00ff00';
+      else if (
+        newGoalField !== undefined &&
+        newGoalField.x === oldFieldCoords.x &&
+        newGoalField.y === oldFieldCoords.y
+      )
+        _color = '#ff0000';
       setField(oldFieldCoords.x, oldFieldCoords.y, _color);
     }
 
@@ -203,16 +220,22 @@
     const fieldIndex = newWallFields.findIndex(
       (w) => w.x === fieldCoords.x && w.y === fieldCoords.y
     );
+    // TODO, what if it is already a color
+    // remove the old color
+    // fieldIndex has nothing to do with the others
     if (fieldIndex === -1) {
-      // add field to wall array
-      newWallFields.push({ x: fieldCoords.x, y: fieldCoords.y });
-
       // update color
-      if (mouseVal === 0) setField(fieldCoords.x, fieldCoords.y, '#404040');
-      else if (mouseVal === 1)
-        setField(fieldCoords.x, fieldCoords.y, '#000088');
-      else if (mouseVal === 2)
-        setField(fieldCoords.x, fieldCoords.y, '#880000');
+      if (mouseVal === 0) {
+        setField(fieldCoords.x, fieldCoords.y, '#808080');
+        // add field to wall array
+        newWallFields.push({ x: fieldCoords.x, y: fieldCoords.y });
+      } else if (mouseVal === 1) {
+        setField(fieldCoords.x, fieldCoords.y, '#00ff00');
+        newStartField = fieldCoords;
+      } else if (mouseVal === 2) {
+        setField(fieldCoords.x, fieldCoords.y, '#ff0000');
+        newGoalField = fieldCoords;
+      }
       drawFieldBorder(fieldCoords.x, fieldCoords.y);
     } else {
       // remove from walls array
@@ -222,8 +245,16 @@
       setField(fieldCoords.x, fieldCoords.y);
       drawFieldBorder(fieldCoords.x, fieldCoords.y);
     }
+    log();
+  }
 
+  function onKeyUp(event) {
+    if (event.code === 'KeyA') mouseVal = (mouseVal + 1) % 3;
+  }
+
+  function log() {
     console.clear();
+    console.log(mouseVal);
     console.log(
       '[' +
         newWallFields
@@ -232,11 +263,10 @@
           .toString() +
         ']'
     );
-  }
-
-  function onKeyUp(event) {
-    console.log('key');
-    if (event.charCode === 'a') mouseVal = (mouseVal + 1) % 3;
+    if (newStartField !== undefined)
+      console.log(`{ x: ${newStartField.x}, y: ${newStartField.y} }`);
+    if (newGoalField !== undefined)
+      console.log(`{ x: ${newGoalField.x}, y: ${newGoalField.y} }`);
   }
 
   function setField(fieldX, fieldY, color, _drawGrid = true) {
