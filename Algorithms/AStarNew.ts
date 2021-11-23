@@ -202,6 +202,7 @@ class AStars {
           n.gCost = currentGCost;
           return n;
         });
+        // TODO, what if an other neighbour is better
         return true;
       } else if (node.value !== value.wall && node.value !== value.start) {
         // TODO
@@ -360,12 +361,13 @@ class AStars {
       }
 
       pixelInfo[y][x][0] = color;
+      if (_node === -1 || _node.value === value.wall) pixelInfo[y][x][1] = '-';
+      else
+        pixelInfo[y][x][1] = this.getHCost({ x: x, y: y }, this.goalCoords)
+          .toPrecision(3)
+          .toString();
 
-      pixelInfo[y][x][1] = this.getHCost({ x: x, y: y }, this.goalCoords)
-        .toPrecision(3)
-        .toString();
-
-      if (_node === -1) pixelInfo[y][x][2] = '-';
+      if (_node === -1 || _node.value === value.wall) pixelInfo[y][x][2] = '-';
       else pixelInfo[y][x][2] = _node.gCost.toPrecision(3).toString();
 
       // increase counter
@@ -379,11 +381,11 @@ class AStars {
   }
 }
 
-const _aStar = new AStars(10, 10, { x: 0, y: 0 }, { x: 7, y: 8 }, [
+const _aStar = new AStars(10, 10, { x: 4, y: 1 }, { x: 3, y: 7 }, [
+  { x: 2, y: 2 },
   { x: 4, y: 3 },
-  { x: 4, y: 4 },
-  { x: 3, y: 4 },
-  { x: 2, y: 5 }
+  { x: 2, y: 4 },
+  { x: 3, y: 6 }
 ]);
 const _path = _aStar.pathfinding();
 console.log(_path);
