@@ -680,6 +680,27 @@ class CCUS {
   `;
 }
 
+// source code gets preprocessed: removing commas, including defs and use
+class CCUSPreProcessing {}
+
+// preprocessed source code gets down to simpler code (asm)
+class CCUSCompiling {
+  // get all the tokens of the code ("int" is a token and "++" too)
+  static Lexer = class {};
+
+  // get the syntax of every statement => parse tree
+  static syntaxAnalyser = class {};
+
+  // identifier table
+  static semanticAnalyser = class {};
+
+  // optimization of asm code
+  static optimizer = class {};
+}
+
+// simple code (asm) gets executed
+class CCUSExecuting {}
+
 try {
   const c = new CCUS();
   c.RunCC(c.main);
