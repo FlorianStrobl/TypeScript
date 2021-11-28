@@ -1,4 +1,4 @@
-// #region types
+// #region types, vars and funcs
 type alphanumeric = string;
 type identifier = alphanumeric;
 type code = string;
@@ -37,6 +37,34 @@ interface IFunctionContext extends IContext {
 interface internSubstringsHandling {
   substrPlaceholderVal: string;
   substrValue: string;
+}
+
+const getAlphanumericNames: RegExp = /\b([A-Za-z])([A-Za-z0-9])*\b/g;
+const isStringRegex: RegExp = /"((\\"|[^"])*?)"/g;
+const isDefStatement: RegExp =
+  /\bdef ([a-zA-Z])([a-zA-Z0-9])* (\$?(([A-Za-z0-9]+)|("[A-Za-z0-9 ]*")))/g;
+const isUseStatement: RegExp = /\buse (("[a-zA-Z][a-zA-Z0-9 ]*")|(\$[0-9]+))/g;
+const subStringRegex: RegExp = /"((\\"|[^"])*?)"/g;
+
+const isWord: (word: string) => RegExp = (word: string) =>
+  new RegExp(`\b${word}\b`, 'g');
+const Log: (log: any) => void = (log: any) => console.log(log);
+
+function isAlphanumeric(str: string): boolean {
+  return !!str.match(/^[A-Za-z0-9]+$/); // one or more chars AZaz09
+}
+
+function isValidIdentifierName(str: string): boolean {
+  return (
+    str !== '' &&
+    str !== ' ' &&
+    this.isAlphanumeric(str) &&
+    this.isLetter(str.split('')[0]) // first letter has to be a letter
+  );
+}
+
+function isLetter(char: string): boolean {
+  return !!char.match(/[a-zA-Z]/);
 }
 
 enum Type {
@@ -84,17 +112,6 @@ class CCUS {
    * Clamp() Returns value clamped to the inclusive range of min and max.
    * CopySign(double magnitude, double sign) Returns the first floating-point argument with the sign of the second floating-point argument.
    */
-
-  private getAlphanumericNames: RegExp = /\b([A-Za-z])([A-Za-z0-9])*\b/g;
-  private isStringRegex: RegExp = /"((\\"|[^"])*?)"/g;
-  private isDefStatement: RegExp =
-    /\bdef ([a-zA-Z])([a-zA-Z0-9])* (\$?(([A-Za-z0-9]+)|("[A-Za-z0-9 ]*")))/g;
-  private isUseStatement: RegExp =
-    /\buse (("[a-zA-Z][a-zA-Z0-9 ]*")|(\$[0-9]+))/g;
-  private subStringRegex: RegExp = /"((\\"|[^"])*?)"/g;
-
-  private isWord = (word: string) => new RegExp(`\b${word}\b`, 'g');
-  private Log = (log: any) => console.log(log);
 
   keywords: string[] = [
     ...Object.values(Type), // types
@@ -182,13 +199,13 @@ class CCUS {
     //'E' // 2.71828
   ];
 
-  public RunCC(
+  public static RunCC(
     mainFile: string,
     otherFiles?: string[],
     headers?: string[],
     settingsFile?: string
   ) {
-    mainFile = this.preCompile(
+    mainFile = CCUSPreProcessing.preCompile(
       mainFile,
       [
         { name: 'file1', content: '-' },
@@ -208,7 +225,7 @@ class CCUS {
     }
   }
 
-  private callFunction(func: string, ctx: IFunctionContext): string {
+  private static callFunction(func: string, ctx: IFunctionContext): string {
     let curFunc: IFunction | undefined = undefined;
     for (const f of ctx.funcs) if (f.name === func) curFunc = f;
     if (curFunc === undefined)
@@ -223,174 +240,8 @@ class CCUS {
     }
   }
 
-  private preCompile(
-    file: string,
-    files?: { name: string; content: string }[],
-    isHeader?: boolean
-  ): string {
-    // get all the compiled versions of the other files to use them as header files
-    let preCompiledCoFiles: { name: string; content: string }[] = [];
-    if (isHeader !== true)
-      preCompiledCoFiles =
-        files?.map((f) => ({
-          name: f.name,
-          content:
-            // compile each map
-            this.preCompile(
-              f.content, // the content of it
-              // every other file could be needed too
-              files.filter((subfile) => subfile.name !== f.name), // not the file itself to fix recursion
-              true // it's a header file TODO, header else get done twice
-            )
-        })) ?? [];
-
-    // remove all strings before accessing code
-    const substrHandler: {
-      string: string;
-      substrings: internSubstringsHandling[];
-    } = this.extractSubstrings(file, '$', this.subStringRegex);
-    file = substrHandler.string; // replace the file with the placeholder file
-    let substrs: internSubstringsHandling[] = substrHandler.substrings; // the placeholders
-
-    // format code and split them by line (for the rest)
-    // attention: this is before the check for preCompile statements!!
-    let lines: string[] = file
-      .replace(/\/\/.*/g, '') // remove all comments at the end of lines TODO, make them to " "?
-      .replace(/\t/g, ' ') // removes tabs
-      .replace(/\n/g, ' \n ') // ensures that key words are splitted even over line ends which have no spaces
-      .replace(/ +\n(\n| )+/g, ' \n') // remove double spaces splitted over lines (" \n ")
-      .replace(/  +/g, ' ') // replace all double spaces (on a single line) with a single space
-      .split('\n') // split the lines
-      .filter((s) => s !== '' && s !== ' '); // remove empty strs in array
-
-    let preCompileStatements: string[] = [];
-    for (const line of lines) {
-      // get all the use/inc and def statments
-      if (!!line.match(this.isDefStatement))
-        preCompileStatements.push(line.match(this.isDefStatement)![0]);
-      // if (!!line.match(isUseStatement))
-      //   preCompileStatements.push(line.match(isUseStatement)![0]);
-    }
-
-    let defs: { placeholderName: string; value: string }[] = []; // def statements
-    let headers: string[] = []; // use/inc files
-    for (const pre of preCompileStatements) {
-      lines = lines
-        .map((s) => s.replace(pre, '').replace(/  +/g, ' ')) // remove precompile str from the line and fix any double spaces
-        .filter((s) => s !== '' && s !== ' '); // remove empty lines
-
-      if (!!pre.match(this.isDefStatement)) {
-        // is a def statement, TODO add them to the main string later
-        defs.push({
-          placeholderName: pre.split(' ')[1],
-          value: pre.split(' ')[2]
-        });
-      }
-      // if (!!pre.match(isUseStatement)) {
-      //   // is a use thing, TODO add them to the main string later
-      //   headers.push(pre.split(' ')[1].trimEnd());
-      // }
-    }
-    // replace placeholder values in defs and headers to main values
-    defs = defs.map((def) => ({
-      placeholderName: def.placeholderName,
-      value: this.insertSubstrings(def.value, /\$\d+/g, substrs)
-    }));
-    headers = headers.map((header) =>
-      this.insertSubstrings(header, /\$\d+/g, substrs)
-    );
-
-    // TODO def and header/use/inc
-
-    // reinsert all the subtrings, which where removed at the beginning
-    file = this.insertSubstrings(lines.join(''), /\$\d+/g, substrs);
-
-    // insert all the defs
-    file = this.insertSubstrings(
-      file,
-      /([a-zA-Z])([a-zA-Z0-9])*/g,
-      defs.map((def) => ({
-        substrPlaceholderVal: def.placeholderName,
-        substrValue: def.value
-      }))
-    );
-
-    // insert all the headers TODO
-    // file = insertSubstrings(
-    //   file,
-    //   /\$\$\d+/g,
-    //   headers.map((def) => ({
-    //     substrPlaceholderVal: def.placeholderName,
-    //     substrValue: def.value
-    //   }))
-    // );
-
-    //console.info('final infos', {
-    //  file,
-    //  defs,
-    //  headers,
-    //  substrs
-    //});
-    this.Log(file);
-
-    return file;
-  }
-
-  private extractSubstrings(
-    string: string,
-    replaceSymbol: string,
-    replaceSubstringForm: RegExp
-  ): {
-    string: string;
-    substrings: internSubstringsHandling[];
-  } {
-    // all the substrings
-    let substrs: internSubstringsHandling[] = [];
-    // keep track of the current placeholder
-    let placeholderCount: number = 0;
-
-    for (const substr of string.match(replaceSubstringForm) ?? []) {
-      const alreadyExist: internSubstringsHandling | undefined = substrs.find(
-        (s) => s.substrValue === substr
-      );
-      // search for already existing placeholder
-      if (alreadyExist !== undefined) {
-        string = string.replace(substr, alreadyExist.substrPlaceholderVal); // replace the string with an placeholder inside the main file
-      } else {
-        substrs.push({
-          substrValue: substr,
-          substrPlaceholderVal: replaceSymbol + placeholderCount
-        }); // add the substr to the array
-
-        string = string.replace(substr, replaceSymbol + placeholderCount); // replace the string with an placeholder inside the main file
-        placeholderCount++; // inc placeholder count
-      }
-    }
-
-    return { substrings: substrs, string: string };
-  }
-
-  private insertSubstrings(
-    string: string,
-    format: RegExp,
-    substrings: internSubstringsHandling[]
-  ): string {
-    string = string.replace(
-      format, // everything in the specified format
-      (
-        placeholder // for every substring inside the main string
-      ) =>
-        substrings.find(
-          // check if substrings includes a placeholder name which is identical to the substring
-          (substr) => substr.substrPlaceholderVal === placeholder
-        )?.substrValue ?? placeholder // replace it with the value if not undefined (the first ?)
-      // if undefined, replace it with itself again (the second ??)
-    );
-    return string;
-  }
-
   // TODO, not use
-  private getTopLevelFunctions(str: string): IFunction[] {
+  private static getTopLevelFunctions(str: string): IFunction[] {
     const chars: string[] = str.split('');
     chars.unshift(' '); // TODO because "func " is not " func "
 
@@ -524,7 +375,7 @@ class CCUS {
     }
   }
 
-  private getLogicalCodeBlocks(code: string): string[] {
+  private static getLogicalCodeBlocks(code: string): string[] {
     let blocks: string[] = [];
     const chars: string[] = code.split('');
     for (let i = 0; i < chars.length; ++i) {
@@ -535,8 +386,8 @@ class CCUS {
     return blocks;
   }
 
-  private isValidFunc(func: IFunction): Error | boolean {
-    if (!this.isValidIdentifierName(func.name))
+  private static isValidFunc(func: IFunction): Error | boolean {
+    if (!isValidIdentifierName(func.name))
       return new Error(`The function "${func.name}" has an invalid name.`);
 
     for (const arg of func.args) {
@@ -544,7 +395,7 @@ class CCUS {
         return new Error(
           `The function "${func.name}" has an invalid type in it's arguments. Type "${arg.type}" doesn't exist.`
         );
-      if (!this.isValidIdentifierName(arg.name))
+      if (!isValidIdentifierName(arg.name))
         return new Error(
           `The function "${func.name}" has an invalid argument name in it's arguments. The name "${arg.name}" isn't valid.`
         );
@@ -553,30 +404,13 @@ class CCUS {
     return true;
   }
 
-  private isValidType(str: Type | string): boolean {
+  private static isValidType(str: Type | string): boolean {
     for (const type in Type) if (str === type) return true;
     return false;
   }
 
-  private isValidIdentifierName(str: string): boolean {
-    return (
-      str !== '' &&
-      str !== ' ' &&
-      this.isAlphanumeric(str) &&
-      this.isLetter(str.split('')[0]) // first letter has to be a letter
-    );
-  }
-
-  private isAlphanumeric(str: string): boolean {
-    return !!str.match(/^[A-Za-z0-9]+$/); // one or more chars AZaz09
-  }
-
-  private isLetter(char: string): boolean {
-    return !!char.match(/[a-zA-Z]/);
-  }
-
   // ccus test code
-  public main = `
+  public static main = `
   // valid CCS file lol
   def aDef "myVal" // every "aDef" should be replaced with "myVal"
   use "file1" // insert the "file1" file at this position
@@ -681,7 +515,173 @@ class CCUS {
 }
 
 // source code gets preprocessed: removing commas, including defs and use
-class CCUSPreProcessing {}
+class CCUSPreProcessing {
+  public static preCompile(
+    file: string,
+    files?: { name: string; content: string }[],
+    isHeader?: boolean
+  ): string {
+    // get all the compiled versions of the other files to use them as header files
+    let preCompiledCoFiles: { name: string; content: string }[] = [];
+    if (isHeader !== true)
+      preCompiledCoFiles =
+        files?.map((f) => ({
+          name: f.name,
+          content:
+            // compile each map
+            this.preCompile(
+              f.content, // the content of it
+              // every other file could be needed too
+              files.filter((subfile) => subfile.name !== f.name), // not the file itself to fix recursion
+              true // it's a header file TODO, header else get done twice
+            )
+        })) ?? [];
+
+    // remove all strings before accessing code
+    const substrHandler: {
+      string: string;
+      substrings: internSubstringsHandling[];
+    } = this.extractSubstrings(file, '$', subStringRegex);
+    file = substrHandler.string; // replace the file with the placeholder file
+    let substrs: internSubstringsHandling[] = substrHandler.substrings; // the placeholders
+
+    // format code and split them by line (for the rest)
+    // attention: this is before the check for preCompile statements!!
+    let lines: string[] = file
+      .replace(/\/\/.*/g, '') // remove all comments at the end of lines TODO, make them to " "?
+      .replace(/\t/g, ' ') // removes tabs
+      .replace(/\n/g, ' \n ') // ensures that key words are splitted even over line ends which have no spaces
+      .replace(/ +\n(\n| )+/g, ' \n') // remove double spaces splitted over lines (" \n ")
+      .replace(/  +/g, ' ') // replace all double spaces (on a single line) with a single space
+      .split('\n') // split the lines
+      .filter((s) => s !== '' && s !== ' '); // remove empty strs in array
+
+    let preCompileStatements: string[] = [];
+    for (const line of lines) {
+      // get all the use/inc and def statments
+      if (!!line.match(isDefStatement))
+        preCompileStatements.push(line.match(isDefStatement)![0]);
+      // if (!!line.match(isUseStatement))
+      //   preCompileStatements.push(line.match(isUseStatement)![0]);
+    }
+
+    let defs: { placeholderName: string; value: string }[] = []; // def statements
+    let headers: string[] = []; // use/inc files
+    for (const pre of preCompileStatements) {
+      lines = lines
+        .map((s) => s.replace(pre, '').replace(/  +/g, ' ')) // remove precompile str from the line and fix any double spaces
+        .filter((s) => s !== '' && s !== ' '); // remove empty lines
+
+      if (!!pre.match(isDefStatement)) {
+        // is a def statement, TODO add them to the main string later
+        defs.push({
+          placeholderName: pre.split(' ')[1],
+          value: pre.split(' ')[2]
+        });
+      }
+      // if (!!pre.match(isUseStatement)) {
+      //   // is a use thing, TODO add them to the main string later
+      //   headers.push(pre.split(' ')[1].trimEnd());
+      // }
+    }
+    // replace placeholder values in defs and headers to main values
+    defs = defs.map((def) => ({
+      placeholderName: def.placeholderName,
+      value: this.insertSubstrings(def.value, /\$\d+/g, substrs)
+    }));
+    headers = headers.map((header) =>
+      this.insertSubstrings(header, /\$\d+/g, substrs)
+    );
+
+    // TODO def and header/use/inc
+
+    // reinsert all the subtrings, which where removed at the beginning
+    file = this.insertSubstrings(lines.join(''), /\$\d+/g, substrs);
+
+    // insert all the defs
+    file = this.insertSubstrings(
+      file,
+      /([a-zA-Z])([a-zA-Z0-9])*/g,
+      defs.map((def) => ({
+        substrPlaceholderVal: def.placeholderName,
+        substrValue: def.value
+      }))
+    );
+
+    // insert all the headers TODO
+    // file = insertSubstrings(
+    //   file,
+    //   /\$\$\d+/g,
+    //   headers.map((def) => ({
+    //     substrPlaceholderVal: def.placeholderName,
+    //     substrValue: def.value
+    //   }))
+    // );
+
+    //console.info('final infos', {
+    //  file,
+    //  defs,
+    //  headers,
+    //  substrs
+    //});
+    Log(file);
+
+    return file;
+  }
+
+  private static extractSubstrings(
+    string: string,
+    replaceSymbol: string,
+    replaceSubstringForm: RegExp
+  ): {
+    string: string;
+    substrings: internSubstringsHandling[];
+  } {
+    // all the substrings
+    let substrs: internSubstringsHandling[] = [];
+    // keep track of the current placeholder
+    let placeholderCount: number = 0;
+
+    for (const substr of string.match(replaceSubstringForm) ?? []) {
+      const alreadyExist: internSubstringsHandling | undefined = substrs.find(
+        (s) => s.substrValue === substr
+      );
+      // search for already existing placeholder
+      if (alreadyExist !== undefined) {
+        string = string.replace(substr, alreadyExist.substrPlaceholderVal); // replace the string with an placeholder inside the main file
+      } else {
+        substrs.push({
+          substrValue: substr,
+          substrPlaceholderVal: replaceSymbol + placeholderCount
+        }); // add the substr to the array
+
+        string = string.replace(substr, replaceSymbol + placeholderCount); // replace the string with an placeholder inside the main file
+        placeholderCount++; // inc placeholder count
+      }
+    }
+
+    return { substrings: substrs, string: string };
+  }
+
+  private static insertSubstrings(
+    string: string,
+    format: RegExp,
+    substrings: internSubstringsHandling[]
+  ): string {
+    string = string.replace(
+      format, // everything in the specified format
+      (
+        placeholder // for every substring inside the main string
+      ) =>
+        substrings.find(
+          // check if substrings includes a placeholder name which is identical to the substring
+          (substr) => substr.substrPlaceholderVal === placeholder
+        )?.substrValue ?? placeholder // replace it with the value if not undefined (the first ?)
+      // if undefined, replace it with itself again (the second ??)
+    );
+    return string;
+  }
+}
 
 // preprocessed source code gets down to simpler code (asm)
 class CCUSCompiling {
@@ -695,15 +695,19 @@ class CCUSCompiling {
   static semanticAnalyser = class {};
 
   // optimization of asm code
-  static optimizer = class {};
+  static optimizer = class {
+    // e.g. "x = x + 3" == "x += 3"
+  };
 }
 
 // simple code (asm) gets executed
 class CCUSExecuting {}
 
+// interprets CCUS in real time
+class CCUSInterpreter {}
+
 try {
-  const c = new CCUS();
-  c.RunCC(c.main);
+  CCUS.RunCC(CCUS.main);
 } catch (err) {
   console.error(err);
 }
