@@ -58,8 +58,8 @@ function isValidIdentifierName(str: string): boolean {
   return (
     str !== '' &&
     str !== ' ' &&
-    this.isAlphanumeric(str) &&
-    this.isLetter(str.split('')[0]) // first letter has to be a letter
+    isAlphanumeric(str) &&
+    isLetter(str.split('')[0]) // first letter has to be a letter
   );
 }
 
@@ -410,7 +410,7 @@ class CCUS {
   }
 
   // ccus test code
-  public static main = `
+  public static testCode = `
   // valid CCS file lol
   def aDef "myVal" // every "aDef" should be replaced with "myVal"
   use "file1" // insert the "file1" file at this position
@@ -707,7 +707,8 @@ class CCUSExecuting {}
 class CCUSInterpreter {}
 
 try {
-  CCUS.RunCC(CCUS.main);
+  //CCUS.RunCC(CCUS.testCode);
+  CCUSPreProcessing.preCompile(CCUS.testCode);
 } catch (err) {
   console.error(err);
 }
