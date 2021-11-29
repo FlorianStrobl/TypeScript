@@ -603,7 +603,8 @@ class CCUSPreProcessing {
     // format code and split them by line (for the rest)
     // attention: this is before the check for preCompile statements!!
     let lines: string[] = code
-      .replace(/\/\/.*/g, '') // remove all comments at the end of lines TODO, make them to " "?
+      .replace(/\/\/.*/g, '') // remove all single line comments at the end of lines
+      .replace(/\/\*(.|\n)*\*\//g, '')
       .replace(/\t/g, ' ') // removes tabs
       .replace(/\n/g, ' \n ') // ensures that key words are splitted even over line ends which have no spaces
       .replace(/ +\n(\n| )+/g, ' \n') // remove double spaces splitted over lines (" \n ")
@@ -763,21 +764,7 @@ class CCUSExecuting {}
 class CCUSInterpreter {}
 
 try {
-  console.log(
-    CCUSPreProcessing.removeCommentsWhiteSpaces(`
-  
-  hi // this is a comment lmao
-  /** */
-  /* */
-  /*a
-  aak
-  kd
-  //
-
-  */ok
-
-  `)
-  );
+  console.log(CCUSPreProcessing.removeCommentsWhiteSpaces(`//test\nok`));
   //CCUS.RunCC(CCUS.testCode);
   //CCUSPreProcessing.preCompile(CCUS.testCode);
 } catch (err) {
