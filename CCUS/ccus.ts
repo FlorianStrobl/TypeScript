@@ -797,20 +797,13 @@ class CCUSExecuting {}
 // interprets CCUS in real time
 class CCUSInterpreter {}
 
-try {
-  const str = `"test""te"test"st"`;
-  const data = CCUSPreProcessing.extractSubstrings(str, subStringRegex, '$');
-  console.log(
-    str,
-    data,
-    CCUSPreProcessing.insertSubstrings(
-      data.code,
-      subStringPlaceholder,
-      data.substrings
-    )
-  );
-  //CCUS.RunCC(CCUS.testCode);
-  //CCUSPreProcessing.preCompile(CCUS.testCode);
-} catch (err) {
-  console.error(err);
-}
+const str = `"test""te"test"st"`;
+const data = CCUSPreProcessing.extractSubstrings(str, subStringRegex, '$');
+const data2 = CCUSPreProcessing.insertSubstrings(
+  data.code,
+  subStringPlaceholder,
+  data.substrings
+);
+console.log(str, data, data2);
+//CCUS.RunCC(CCUS.testCode);
+//CCUSPreProcessing.preCompile(CCUS.testCode);
