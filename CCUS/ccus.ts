@@ -516,38 +516,92 @@ class CCUS {
 
 // source code gets preprocessed: removing commas, including defs and use
 class CCUSPreProcessing {
+  /**
+   * Pre processing:
+   * - Removing comments
+   * - Removing whitespaces characters
+   * - Process # code: use and def statements
+   *
+   * @param code The source code to pre process
+   * @param header The header files needed for that
+   * @param isHeader If the source code is a header file itself
+   * @returns Pre processed code
+   */
   public static preCompile(
-    file: string,
-    files?: { name: string; content: string }[],
+    code: code,
+    header?: { name: string; content: code }[],
     isHeader?: boolean
   ): string {
-    // get all the compiled versions of the other files to use them as header files
+    // #region get all the compiled versions of the other files to use them as header files
     let preCompiledCoFiles: { name: string; content: string }[] = [];
+
     if (isHeader !== true)
       preCompiledCoFiles =
-        files?.map((f) => ({
+        header?.map((f) => ({
           name: f.name,
           content:
             // compile each map
             this.preCompile(
               f.content, // the content of it
               // every other file could be needed too
-              files.filter((subfile) => subfile.name !== f.name), // not the file itself to fix recursion
+              header.filter((subfile) => subfile.name !== f.name), // not the file itself to fix recursion
               true // it's a header file TODO, header else get done twice
             )
         })) ?? [];
+    // #endregion
 
-    // remove all strings before accessing code
-    const substrHandler: {
-      string: string;
+    // remove substrings for ez of use
+    const substringData: {
+      code: string;
       substrings: internSubstringsHandling[];
-    } = this.extractSubstrings(file, '$', subStringRegex);
-    file = substrHandler.string; // replace the file with the placeholder file
-    let substrs: internSubstringsHandling[] = substrHandler.substrings; // the placeholders
+    } = this.swapSubstring(code);
+    code = substringData.code;
 
+    // remove all the comments and whitespaces
+    let lines: code[] = this.removeCommentsWhiteSpaces(code);
+
+    // do the preprocess statements
+    code = this.preprocessStatements(lines, substringData.substrings);
+
+    // insert all the headers TODO
+    // file = insertSubstrings(
+    //   file,
+    //   /\$\$\d+/g,
+    //   headers.map((def) => ({
+    //     substrPlaceholderVal: def.placeholderName,
+    //     substrValue: def.value
+    //   }))
+    // );
+
+    //console.info('final infos', {
+    //  file,
+    //  defs,
+    //  headers,
+    //  substrs
+    //});
+    Log(code);
+
+    return code;
+  }
+
+  /**
+   * Remove any comments in the code
+   * Comments:
+   * - //
+   * - /* /
+   * - /** /
+   *
+   * Whitespaces:
+   * - '  '
+   * - '\t'
+   * - '\n'
+   *
+   * @returns Code without comments
+   */
+  public static removeCommentsWhiteSpaces(code: code): code[] {
     // format code and split them by line (for the rest)
     // attention: this is before the check for preCompile statements!!
-    let lines: string[] = file
+    let lines: string[] = code
       .replace(/\/\/.*/g, '') // remove all comments at the end of lines TODO, make them to " "?
       .replace(/\t/g, ' ') // removes tabs
       .replace(/\n/g, ' \n ') // ensures that key words are splitted even over line ends which have no spaces
@@ -555,7 +609,13 @@ class CCUSPreProcessing {
       .replace(/  +/g, ' ') // replace all double spaces (on a single line) with a single space
       .split('\n') // split the lines
       .filter((s) => s !== '' && s !== ' '); // remove empty strs in array
+    return lines;
+  }
 
+  private static preprocessStatements(
+    lines: code[],
+    substrs: internSubstringsHandling[]
+  ): code {
     let preCompileStatements: string[] = [];
     for (const line of lines) {
       // get all the use/inc and def statments
@@ -596,11 +656,11 @@ class CCUSPreProcessing {
     // TODO def and header/use/inc
 
     // reinsert all the subtrings, which where removed at the beginning
-    file = this.insertSubstrings(lines.join(''), /\$\d+/g, substrs);
+    let code = this.insertSubstrings(lines.join(''), /\$\d+/g, substrs);
 
     // insert all the defs
-    file = this.insertSubstrings(
-      file,
+    code = this.insertSubstrings(
+      code,
       /([a-zA-Z])([a-zA-Z0-9])*/g,
       defs.map((def) => ({
         substrPlaceholderVal: def.placeholderName,
@@ -608,25 +668,20 @@ class CCUSPreProcessing {
       }))
     );
 
-    // insert all the headers TODO
-    // file = insertSubstrings(
-    //   file,
-    //   /\$\$\d+/g,
-    //   headers.map((def) => ({
-    //     substrPlaceholderVal: def.placeholderName,
-    //     substrValue: def.value
-    //   }))
-    // );
+    return code;
+  }
 
-    //console.info('final infos', {
-    //  file,
-    //  defs,
-    //  headers,
-    //  substrs
-    //});
-    Log(file);
-
-    return file;
+  private static swapSubstring(code: code): {
+    code: code;
+    substrings: internSubstringsHandling[];
+  } {
+    // remove all strings before accessing code
+    const substrHandler: {
+      string: string;
+      substrings: internSubstringsHandling[];
+    } = this.extractSubstrings(code, '$', subStringRegex);
+    code = substrHandler.string; // replace the file with the placeholder file
+    return { code: code, substrings: substrHandler.substrings }; // the placeholders
   }
 
   private static extractSubstrings(
@@ -707,8 +762,23 @@ class CCUSExecuting {}
 class CCUSInterpreter {}
 
 try {
+  console.log(
+    CCUSPreProcessing.removeCommentsWhiteSpaces(`
+  
+  hi // this is a comment lmao
+  /** */
+  /* */
+  /*a
+  aak
+  kd
+  //
+
+  */ok
+
+  `)
+  );
   //CCUS.RunCC(CCUS.testCode);
-  CCUSPreProcessing.preCompile(CCUS.testCode);
+  //CCUSPreProcessing.preCompile(CCUS.testCode);
 } catch (err) {
   console.error(err);
 }
