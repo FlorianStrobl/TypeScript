@@ -700,34 +700,34 @@ class CCUSPreProcessing {
     code: code;
     substrings: internSubstringsHandling[];
   } {
-    let inc: number = -1;
-    let substrs_: internSubstringsHandling[] = [];
+    let id: number = -1;
+    let substrs: internSubstringsHandling[] = [];
 
-    const newCode: string = `"test""te"test"st"`.replace(
+    const newCode: string = code.replace(
       subStringRegex, // everything in the specified format
       (
         placeholder // for every substring inside the main string
       ) => {
-        inc++;
-        substrs_.push({
+        id++;
+        substrs.push({
           substrValue: placeholder, // the value of the to replace substr
-          substrPlaceholder: '$' + inc + '$' // the replace value for the substr
+          substrPlaceholder: '$' + id + '$' // the replace value for the substr
         });
-        return '$' + inc + '$';
+        return '$' + id + '$';
       }
     );
 
-    return { code: newCode, substrings: substrs_ };
+    return { code: newCode, substrings: substrs };
 
     // #region manual version
     // the substring data
-    let substrs: internSubstringsHandling[] = [];
+    let substrs_: internSubstringsHandling[] = [];
     // keep track of the current placeholder number
     let placeholderCount: number = 0;
 
     for (const substr of code.match(replaceSubstringForm) ?? []) {
       // check if already was replaced once
-      const index: number = substrs.findIndex((s) => s.substrValue === substr);
+      const index: number = substrs_.findIndex((s) => s.substrValue === substr);
 
       if (index === -1) {
         // new substr
@@ -736,7 +736,7 @@ class CCUSPreProcessing {
           replaceSymbol + placeholderCount + replaceSymbol;
 
         // add the substr to the array
-        substrs.push({
+        substrs_.push({
           substrValue: substr, // the value of the to replace substr
           substrPlaceholder: placeholderValue // the replace value for the substr
         });
@@ -747,10 +747,10 @@ class CCUSPreProcessing {
         placeholderCount++;
       }
       // wass already replaced at least once, reuse the placeholder
-      else code = code.replace(substr, substrs[index].substrPlaceholder);
+      else code = code.replace(substr, substrs_[index].substrPlaceholder);
     }
 
-    return { code: code, substrings: substrs };
+    return { code: code, substrings: substrs_ };
     // #endregion
   }
 
