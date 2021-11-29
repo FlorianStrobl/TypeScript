@@ -207,7 +207,7 @@ class CCUS {
     headers?: string[],
     settingsFile?: string
   ) {
-    mainFile = CCUSPreProcessing.preCompile(
+    mainFile = CCUSPreProcessing.preProcess(
       mainFile,
       [
         { name: 'file1', content: '-' },
@@ -529,7 +529,7 @@ class CCUSPreProcessing {
    * @param isHeader If the source code is a header file itself
    * @returns Pre processed code
    */
-  public static preCompile(
+  public static preProcess(
     code: code,
     header?: { name: string; content: code }[],
     isHeader?: boolean
@@ -543,7 +543,7 @@ class CCUSPreProcessing {
           name: f.name,
           content:
             // compile each map
-            this.preCompile(
+            this.preProcess(
               f.content, // the content of it
               // every other file could be needed too
               header.filter((subfile) => subfile.name !== f.name), // not the file itself to fix recursion
