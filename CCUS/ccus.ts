@@ -193,7 +193,8 @@ class CCUS {
     '_', // number seperator
     ' ', // whitespace 0
     '\n', // whitespace 1
-    '\t' // whitesspace 2
+    '\t', // whitesspace 2
+    '[]' // array operator
     //'PI', // 3.1415926535897931
     //'TAU', // 6.2831853071795862
     //'E' // 2.71828
