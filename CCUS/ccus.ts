@@ -35,7 +35,7 @@ interface IFunctionContext extends IContext {
 }
 
 interface internSubstringsHandling {
-  substrPlaceholderVal: string;
+  substrPlaceholder: string;
   substrValue: string;
 }
 
@@ -45,6 +45,7 @@ const isDefStatement: RegExp =
   /\bdef ([a-zA-Z])([a-zA-Z0-9])* (\$?(([A-Za-z0-9]+)|("[A-Za-z0-9 ]*")))/g;
 const isUseStatement: RegExp = /\buse (("[a-zA-Z][a-zA-Z0-9 ]*")|(\$[0-9]+))/g;
 const subStringRegex: RegExp = /"((\\"|[^"])*?)"/g;
+const subStringPlaceholder: RegExp = /\$\d+\$/g;
 
 const isWord: (word: string) => RegExp = (word: string) =>
   new RegExp(`\b${word}\b`, 'g');
@@ -567,7 +568,7 @@ class CCUSPreProcessing {
     // insert all the headers TODO
     // file = insertSubstrings(
     //   file,
-    //   /\$\$\d+/g,
+    //   subStringPlaceholder,
     //   headers.map((def) => ({
     //     substrPlaceholderVal: def.placeholderName,
     //     substrValue: def.value
@@ -649,23 +650,27 @@ class CCUSPreProcessing {
     // replace placeholder values in defs and headers to main values
     defs = defs.map((def) => ({
       placeholderName: def.placeholderName,
-      value: this.insertSubstrings(def.value, /\$\d+/g, substrs)
+      value: this.insertSubstrings(def.value, subStringPlaceholder, substrs)
     }));
     headers = headers.map((header) =>
-      this.insertSubstrings(header, /\$\d+/g, substrs)
+      this.insertSubstrings(header, subStringPlaceholder, substrs)
     );
 
     // TODO def and header/use/inc
 
     // reinsert all the subtrings, which where removed at the beginning
-    let code = this.insertSubstrings(lines.join(''), /\$\d+/g, substrs);
+    let code = this.insertSubstrings(
+      lines.join(''),
+      subStringPlaceholder,
+      substrs
+    );
 
     // insert all the defs
     code = this.insertSubstrings(
       code,
       /([a-zA-Z])([a-zA-Z0-9])*/g,
       defs.map((def) => ({
-        substrPlaceholderVal: def.placeholderName,
+        substrPlaceholder: def.placeholderName,
         substrValue: def.value
       }))
     );
@@ -679,64 +684,93 @@ class CCUSPreProcessing {
   } {
     // remove all strings before accessing code
     const substrHandler: {
-      string: string;
+      code: string;
       substrings: internSubstringsHandling[];
-    } = this.extractSubstrings(code, '$', subStringRegex);
-    code = substrHandler.string; // replace the file with the placeholder file
+    } = this.extractSubstrings(code, subStringRegex, '$');
+    code = substrHandler.code; // replace the file with the placeholder file
     return { code: code, substrings: substrHandler.substrings }; // the placeholders
   }
 
-  private static extractSubstrings(
-    string: string,
-    replaceSymbol: string,
-    replaceSubstringForm: RegExp
+  // e.g. `code "sub" code` => `code $0$ code`
+  public static extractSubstrings(
+    code: code,
+    replaceSubstringForm: RegExp,
+    replaceSymbol: string
   ): {
-    string: string;
+    code: code;
     substrings: internSubstringsHandling[];
   } {
-    // all the substrings
+    let inc: number = -1;
+    let substrs_: internSubstringsHandling[] = [];
+
+    const newCode: string = `"test""te"test"st"`.replace(
+      subStringRegex, // everything in the specified format
+      (
+        placeholder // for every substring inside the main string
+      ) => {
+        inc++;
+        substrs_.push({
+          substrValue: placeholder, // the value of the to replace substr
+          substrPlaceholder: '$' + inc + '$' // the replace value for the substr
+        });
+        return '$' + inc + '$';
+      }
+    );
+
+    return { code: newCode, substrings: substrs_ };
+
+    // #region manual version
+    // the substring data
     let substrs: internSubstringsHandling[] = [];
-    // keep track of the current placeholder
+    // keep track of the current placeholder number
     let placeholderCount: number = 0;
 
-    for (const substr of string.match(replaceSubstringForm) ?? []) {
-      const alreadyExist: internSubstringsHandling | undefined = substrs.find(
-        (s) => s.substrValue === substr
-      );
-      // search for already existing placeholder
-      if (alreadyExist !== undefined) {
-        string = string.replace(substr, alreadyExist.substrPlaceholderVal); // replace the string with an placeholder inside the main file
-      } else {
-        substrs.push({
-          substrValue: substr,
-          substrPlaceholderVal: replaceSymbol + placeholderCount
-        }); // add the substr to the array
+    for (const substr of code.match(replaceSubstringForm) ?? []) {
+      // check if already was replaced once
+      const index: number = substrs.findIndex((s) => s.substrValue === substr);
 
-        string = string.replace(substr, replaceSymbol + placeholderCount); // replace the string with an placeholder inside the main file
-        placeholderCount++; // inc placeholder count
+      if (index === -1) {
+        // new substr
+
+        const placeholderValue: string =
+          replaceSymbol + placeholderCount + replaceSymbol;
+
+        // add the substr to the array
+        substrs.push({
+          substrValue: substr, // the value of the to replace substr
+          substrPlaceholder: placeholderValue // the replace value for the substr
+        });
+
+        // replace the substring with the placeholder (not all occurences!)
+        code = code.replace(substr, placeholderValue);
+        // inc placeholder count
+        placeholderCount++;
       }
+      // wass already replaced at least once, reuse the placeholder
+      else code = code.replace(substr, substrs[index].substrPlaceholder);
     }
 
-    return { substrings: substrs, string: string };
+    return { code: code, substrings: substrs };
+    // #endregion
   }
 
-  private static insertSubstrings(
-    string: string,
-    format: RegExp,
-    substrings: internSubstringsHandling[]
-  ): string {
-    string = string.replace(
-      format, // everything in the specified format
+  // e.g. `code $0$ code` => `code "sub" code`
+  public static insertSubstrings(
+    code: code,
+    placeholderForm: RegExp,
+    substringData: internSubstringsHandling[]
+  ): code {
+    return code.replace(
+      placeholderForm, // everything in the specified format
       (
         placeholder // for every substring inside the main string
       ) =>
-        substrings.find(
+        substringData.find(
           // check if substrings includes a placeholder name which is identical to the substring
-          (substr) => substr.substrPlaceholderVal === placeholder
+          (substr) => substr.substrPlaceholder === placeholder
         )?.substrValue ?? placeholder // replace it with the value if not undefined (the first ?)
       // if undefined, replace it with itself again (the second ??)
     );
-    return string;
   }
 }
 
@@ -764,10 +798,16 @@ class CCUSExecuting {}
 class CCUSInterpreter {}
 
 try {
+  const str = `"test""te"test"st"`;
+  const data = CCUSPreProcessing.extractSubstrings(str, subStringRegex, '$');
   console.log(
-    CCUSPreProcessing.removeCommentsWhiteSpaces(`
-
-  `)
+    str,
+    data,
+    CCUSPreProcessing.insertSubstrings(
+      data.code,
+      subStringPlaceholder,
+      data.substrings
+    )
   );
   //CCUS.RunCC(CCUS.testCode);
   //CCUSPreProcessing.preCompile(CCUS.testCode);
