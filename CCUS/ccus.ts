@@ -34,18 +34,26 @@ interface IFunctionContext extends IContext {
   args?: IVariable[];
 }
 
-interface internSubstringsHandling {
-  substrPlaceholder: string;
-  substrValue: string;
+interface internLiteralsHandling {
+  literalPlaceholder: string;
+  literalValue: string;
 }
 
-const getAlphanumericNames: RegExp = /\b([A-Za-z])([A-Za-z0-9])*\b/g;
-const isStringRegex: RegExp = /"((\\"|[^"])*?)"/g;
-const isDefStatement: RegExp =
-  /\bdef ([a-zA-Z])([a-zA-Z0-9])* (\$?(([A-Za-z0-9]+)|("[A-Za-z0-9 ]*")))/g;
-const isUseStatement: RegExp = /\buse (("[a-zA-Z][a-zA-Z0-9 ]*")|(\$[0-9]+))/g;
-const subStringRegex: RegExp = /"((\\"|[^"])*?)"/g;
-const subStringPlaceholder: RegExp = /\$\d+\$/g;
+const numbr = 4e9;
+
+const getAlphanumericNames: RegExp = /\b[A-Za-z][A-Za-z0-9]*\b/g;
+const commentRegex: RegExp = /(?:\/\/.*)|(?:(\/\*)(?:[\s\S]*?)(?:\*\/))/g;
+const isStringRegex: RegExp = /"(?:\\"|[^"])*"/g;
+const isBoolRegex: RegExp = /true|false/g;
+const isNumberRegex: RegExp =
+  /[+-]?(?:0[dDbBoOxX])?[+-]?[0-9]+(?:\.[0-9]*)?([eEpP][+-]?[0-9]+)?/g;
+const isLiteralRegex: RegExp =
+  /true|false|(?:"(?:\\"|[^"])*")|(?:[+-]?(?:0[dDbBoOxX])?[+-]?[0-9]+(?:\.[0-9]*)?([eEpP][+-]?[0-9]+)?)/g;
+
+const literalPlaceholder: RegExp = /\$\d+\$/g;
+const isUseStatement: RegExp =
+  /\buse ((?:"[a-zA-Z][a-zA-Z0-9 ]*")|(?:\$[0-9]+))/g;
+const isDefStatement: RegExp = /\bdef [a-zA-Z][a-zA-Z0-9]* [\s\S]*?\n/g;
 
 const isWord: (word: string) => RegExp = (word: string) =>
   new RegExp(`\b${word}\b`, 'g');
@@ -138,7 +146,9 @@ class CCUS {
     'of', // for for loops
     'typeof', // get the type of a variable at runtime
     'imp', // import public variables
-    'new' // create a new object
+    'new', // create a new object
+    'true', // boolean value
+    'false' // boolean value
   ];
 
   // can be followed/preceded by which chars/by which not? TODO
@@ -537,41 +547,42 @@ class CCUSPreProcessing {
     // #region get all the compiled versions of the other files to use them as header files
     let preCompiledCoFiles: { name: string; content: string }[] = [];
 
-    if (isHeader !== true)
-      preCompiledCoFiles =
-        header?.map((f) => ({
-          name: f.name,
-          content:
-            // compile each map
-            this.preProcess(
-              f.content, // the content of it
-              // every other file could be needed too
-              header.filter((subfile) => subfile.name !== f.name), // not the file itself to fix recursion
-              true // it's a header file TODO, header else get done twice
-            )
-        })) ?? [];
+    if (isHeader === true)
+      if (isHeader !== true)
+        preCompiledCoFiles =
+          header?.map((f) => ({
+            name: f.name,
+            content:
+              // compile each map
+              this.preProcess(
+                f.content, // the content of it
+                // every other file could be needed too
+                header.filter((subfile) => subfile.name !== f.name), // not the file itself to fix recursion
+                true // it's a header file TODO, header else get done twice
+              )
+          })) ?? [];
     // #endregion
 
-    // remove substrings for ez of use
-    const substringData: {
+    // remove literals for ez of use
+    const literalData: {
       code: string;
-      substrings: internSubstringsHandling[];
-    } = this.swapSubstring(code);
-    code = substringData.code;
+      literals: internLiteralsHandling[];
+    } = this.swapLiterals(code);
+    code = literalData.code;
 
     // remove all the comments and whitespaces
-    let lines: code[] = this.removeCommentsWhiteSpaces(code);
+    let lines: code[] = this.removeCommentsWhitespaces(code);
 
     // do the preprocess statements
-    code = this.preprocessStatements(lines, substringData.substrings);
+    code = this.preprocessStatements(lines, literalData.literals);
 
     // insert all the headers TODO
-    // file = insertSubstrings(
+    // file = insertLiterals(
     //   file,
-    //   subStringPlaceholder,
+    //   literalsPlaceholder,
     //   headers.map((def) => ({
-    //     substrPlaceholderVal: def.placeholderName,
-    //     substrValue: def.value
+    //     literalPlaceholderVal: def.placeholderName,
+    //     literalValue: def.value
     //   }))
     // );
 
@@ -579,7 +590,7 @@ class CCUSPreProcessing {
     //  file,
     //  defs,
     //  headers,
-    //  substrs
+    //  literals
     //});
     Log(code);
 
@@ -600,24 +611,125 @@ class CCUSPreProcessing {
    *
    * @returns Code without comments
    */
-  public static removeCommentsWhiteSpaces(code: code): code[] {
+  public static removeCommentsWhitespaces(code: code): code[] {
     // format code and split them by line (for the rest)
     // attention: this is before the check for preCompile statements!!
-    let lines: string[] = code
-      .replace(/\/\/.*/g, '') // remove all single line comments at the end of lines
-      .replace(/\/\*(.|\n)*\*\//g, '') // remove multiple line comments
+
+    // remove comments
+    code = code.replace(commentRegex, '');
+
+    // remove whitespaces
+    code = code
       .replace(/\t/g, ' ') // removes tabs
-      .replace(/\n/g, ' \n ') // ensures that key words are splitted even over line ends which have no spaces
-      .replace(/ +\n(\n| )+/g, ' \n') // remove double spaces splitted over lines (" \n ")
-      .replace(/  +/g, ' ') // replace all double spaces (on a single line) with a single space
+      .replace(/\n/g, ' \n ') // bug prevention with removed spaces
+      .replace(/ +\n[\n ]+/g, ' \n') // remove double spaces splitted over lines (" \n ")
+      .replace(/  +/g, ' '); // replace all double spaces (on a single line) with a single space
+
+    return code
       .split('\n') // split the lines
-      .filter((s) => s !== '' && s !== ' '); // remove empty strs in array
-    return lines;
+      .filter((s) => !s.match(/^ *$/g)); // remove empty strings in the array;
+  }
+
+  public static swapLiterals(code: code): {
+    code: code;
+    literals: internLiteralsHandling[];
+  } {
+    // remove all strings before accessing code
+    const literalsHandler: {
+      code: string;
+      literals: internLiteralsHandling[];
+    } = this.extractLiterals(code, isLiteralRegex, '$');
+    code = literalsHandler.code; // replace the file with the placeholder file
+    return { code: code, literals: literalsHandler.literals }; // the placeholders
+  }
+
+  // e.g. `code "sub" code` => `code $0$ code`
+  public static extractLiterals(
+    code: code,
+    replaceLiteralsForm: RegExp,
+    replaceSymbol: string
+  ): {
+    code: code;
+    literals: internLiteralsHandling[];
+  } {
+    let id: number = -1;
+    let literals: internLiteralsHandling[] = [];
+
+    const newCode: string = code.replace(
+      isStringRegex, // everything in the specified format
+      (
+        placeholder // for every literal inside the code
+      ) => {
+        id++;
+        literals.push({
+          literalValue: placeholder, // the value of the to replace literal
+          literalPlaceholder: '$' + id + '$' // the replace value for the literal
+        });
+        return '$' + id + '$';
+      }
+    );
+
+    return { code: newCode, literals: literals };
+
+    // #region manual version
+    // the literals data
+    let literals_: internLiteralsHandling[] = [];
+    // keep track of the current placeholder number
+    let placeholderCount: number = 0;
+
+    for (const literal of code.match(replaceLiteralsForm) ?? []) {
+      // check if already was replaced once
+      const index: number = literals_.findIndex(
+        (s) => s.literalValue === literal
+      );
+
+      if (index === -1) {
+        // new literal
+
+        const placeholderValue: string =
+          replaceSymbol + placeholderCount + replaceSymbol;
+
+        // add the literal to the array
+        literals_.push({
+          literalValue: literal, // the value of the to replace literal
+          literalPlaceholder: placeholderValue // the replace value for the literal
+        });
+
+        // replace the literal with the placeholder (not all occurences!)
+        code = code.replace(literal, placeholderValue);
+        // inc placeholder count
+        placeholderCount++;
+      }
+      // wass already replaced at least once, reuse the placeholder
+      else code = code.replace(literal, literals_[index].literalPlaceholder);
+    }
+
+    return { code: code, literals: literals_ };
+    // #endregion
+  }
+
+  // e.g. `code $0$ code` => `code "sub" code`
+  public static insertLiterals(
+    code: code,
+    placeholderForm: RegExp,
+    literalsData: internLiteralsHandling[]
+  ): code {
+    return code.replace(
+      placeholderForm, // everything in the specified format
+      (
+        placeholder // for every literal inside the main string
+      ) =>
+        literalsData.find(
+          // check if literal includes a placeholder name which is identical to a placeholder in the code
+          (literal) => literal.literalPlaceholder === placeholder
+        )?.literalValue ?? placeholder // replace it with the value if not undefined (the first ?)
+      // if undefined, replace it with itself again (the second ??)
+    );
   }
 
   private static preprocessStatements(
     lines: code[],
-    substrs: internSubstringsHandling[]
+    literals: internLiteralsHandling[]
   ): code {
     let preCompileStatements: string[] = [];
     for (const line of lines) {
@@ -650,127 +762,32 @@ class CCUSPreProcessing {
     // replace placeholder values in defs and headers to main values
     defs = defs.map((def) => ({
       placeholderName: def.placeholderName,
-      value: this.insertSubstrings(def.value, subStringPlaceholder, substrs)
+      value: this.insertLiterals(def.value, literalPlaceholder, literals)
     }));
     headers = headers.map((header) =>
-      this.insertSubstrings(header, subStringPlaceholder, substrs)
+      this.insertLiterals(header, literalPlaceholder, literals)
     );
 
     // TODO def and header/use/inc
 
-    // reinsert all the subtrings, which where removed at the beginning
-    let code = this.insertSubstrings(
+    // reinsert all the literals, which where removed at the beginning
+    let code = this.insertLiterals(
       lines.join(''),
-      subStringPlaceholder,
-      substrs
+      literalPlaceholder,
+      literals
     );
 
     // insert all the defs
-    code = this.insertSubstrings(
+    code = this.insertLiterals(
       code,
       /([a-zA-Z])([a-zA-Z0-9])*/g,
       defs.map((def) => ({
-        substrPlaceholder: def.placeholderName,
-        substrValue: def.value
+        literalPlaceholder: def.placeholderName,
+        literalValue: def.value
       }))
     );
 
     return code;
-  }
-
-  private static swapSubstring(code: code): {
-    code: code;
-    substrings: internSubstringsHandling[];
-  } {
-    // remove all strings before accessing code
-    const substrHandler: {
-      code: string;
-      substrings: internSubstringsHandling[];
-    } = this.extractSubstrings(code, subStringRegex, '$');
-    code = substrHandler.code; // replace the file with the placeholder file
-    return { code: code, substrings: substrHandler.substrings }; // the placeholders
-  }
-
-  // e.g. `code "sub" code` => `code $0$ code`
-  public static extractSubstrings(
-    code: code,
-    replaceSubstringForm: RegExp,
-    replaceSymbol: string
-  ): {
-    code: code;
-    substrings: internSubstringsHandling[];
-  } {
-    let id: number = -1;
-    let substrs: internSubstringsHandling[] = [];
-
-    const newCode: string = code.replace(
-      subStringRegex, // everything in the specified format
-      (
-        placeholder // for every substring inside the main string
-      ) => {
-        id++;
-        substrs.push({
-          substrValue: placeholder, // the value of the to replace substr
-          substrPlaceholder: '$' + id + '$' // the replace value for the substr
-        });
-        return '$' + id + '$';
-      }
-    );
-
-    return { code: newCode, substrings: substrs };
-
-    // #region manual version
-    // the substring data
-    let substrs_: internSubstringsHandling[] = [];
-    // keep track of the current placeholder number
-    let placeholderCount: number = 0;
-
-    for (const substr of code.match(replaceSubstringForm) ?? []) {
-      // check if already was replaced once
-      const index: number = substrs_.findIndex((s) => s.substrValue === substr);
-
-      if (index === -1) {
-        // new substr
-
-        const placeholderValue: string =
-          replaceSymbol + placeholderCount + replaceSymbol;
-
-        // add the substr to the array
-        substrs_.push({
-          substrValue: substr, // the value of the to replace substr
-          substrPlaceholder: placeholderValue // the replace value for the substr
-        });
-
-        // replace the substring with the placeholder (not all occurences!)
-        code = code.replace(substr, placeholderValue);
-        // inc placeholder count
-        placeholderCount++;
-      }
-      // wass already replaced at least once, reuse the placeholder
-      else code = code.replace(substr, substrs_[index].substrPlaceholder);
-    }
-
-    return { code: code, substrings: substrs_ };
-    // #endregion
-  }
-
-  // e.g. `code $0$ code` => `code "sub" code`
-  public static insertSubstrings(
-    code: code,
-    placeholderForm: RegExp,
-    substringData: internSubstringsHandling[]
-  ): code {
-    return code.replace(
-      placeholderForm, // everything in the specified format
-      (
-        placeholder // for every substring inside the main string
-      ) =>
-        substringData.find(
-          // check if substrings includes a placeholder name which is identical to the substring
-          (substr) => substr.substrPlaceholder === placeholder
-        )?.substrValue ?? placeholder // replace it with the value if not undefined (the first ?)
-      // if undefined, replace it with itself again (the second ??)
-    );
   }
 }
 
@@ -797,13 +814,24 @@ class CCUSExecuting {}
 // interprets CCUS in real time
 class CCUSInterpreter {}
 
-const str = `"test""te"test"st"`;
-const data = CCUSPreProcessing.extractSubstrings(str, subStringRegex, '$');
-const data2 = CCUSPreProcessing.insertSubstrings(
-  data.code,
-  subStringPlaceholder,
-  data.substrings
-);
-console.log(str, data, data2);
+const str = `
+f = g/**//h;
+  g // comment
+  test /*
+
+  comment 2
+
+  */
+  true
+  false
+  +3.e3
+  "lel \\"  uff"
+  /*//*/ l();
+
+  m = n//**/o
++ p; 
+`;
+
+console.log(CCUSPreProcessing.swapLiterals(str));
 //CCUS.RunCC(CCUS.testCode);
 //CCUSPreProcessing.preCompile(CCUS.testCode);

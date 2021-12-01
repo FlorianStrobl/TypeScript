@@ -396,7 +396,7 @@ export namespace Numbers {
     pinf: /^(\+)?infinity$/i,
     ninf: /^-infinity$/i,
     nan: /^nan$/i,
-    numsymbols: /^[\+-\.0-9a-fA-FdDbBoOxXeEpP]+$/g,
+    numsymbols: /^[\+-\.0-9a-fA-FdDbBoOxXeEpP]+$/g
   };
 
   /**
@@ -602,7 +602,7 @@ export namespace Numbers {
       frac: removeTrailingZeros(fracs),
       exp: _exp === '-' ? '' : _exp,
       sign: ints.startsWith('-') ? -1 : 1,
-      valid: ints !== '' || fracs !== '',
+      valid: ints !== '' || fracs !== ''
     };
 
     // return sign + str without zeros
@@ -664,7 +664,7 @@ export namespace Numbers {
 
     return {
       int: removeLeadingZeros(integerPart),
-      frac: removeTrailingZeros(fractionPart),
+      frac: removeTrailingZeros(fractionPart)
     };
   }
 
@@ -753,7 +753,7 @@ console.log(BinaryNumbers.Integer.sIntToBinaryString(-6, 4));
 const testNr: number[] = [
   100000000000000000000000,
   0.00000000000000000000000000000000000000000000006,
-  NaN,
+  NaN
 ];
 
 for (const t of testNr) {
