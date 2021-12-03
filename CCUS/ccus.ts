@@ -39,16 +39,14 @@ interface internLiteralsHandling {
   literalValue: string;
 }
 
-const numbr = 4e9;
-
 const getAlphanumericNames: RegExp = /\b[A-Za-z][A-Za-z0-9]*\b/g;
 const commentRegex: RegExp = /(?:\/\/.*)|(?:(\/\*)(?:[\s\S]*?)(?:\*\/))/g;
 const isStringRegex: RegExp = /"(?:\\"|[^"])*"/g;
 const isBoolRegex: RegExp = /true|false/g;
 const isNumberRegex: RegExp =
-  /[+-]?(?:0[dDbBoOxX])?[+-]?[0-9]+(?:\.[0-9]*)?([eEpP][+-]?[0-9]+)?/g;
+  /(?:[+-]?(?:0[dDbBoOxX][+-]?)?[0-9]+(?:\.[0-9]*)?([eEpP][+-]?[0-9]+)?)|(?:[+-]?(?:0[dDbBoOxX][+-]?)?[0-9]*(?:\.[0-9]+)([eEpP][+-]?[0-9]+)?)/g;
 const isLiteralRegex: RegExp =
-  /true|false|(?:"(?:\\"|[^"])*")|(?:[+-]?(?:0[dDbBoOxX])?[+-]?[0-9]+(?:\.[0-9]*)?([eEpP][+-]?[0-9]+)?)/g;
+  /true|false|(?:"(?:\\"|[^"])*")|(?:[+-]?(?:0[dDbBoOxX][+-]?)?[0-9]+(?:\.[0-9]*)?([eEpP][+-]?[0-9]+)?)|(?:[+-]?(?:0[dDbBoOxX][+-]?)?[0-9]*(?:\.[0-9]+)([eEpP][+-]?[0-9]+)?)/g;
 
 const literalPlaceholder: RegExp = /\$\d+\$/g;
 const isUseStatement: RegExp =
@@ -656,7 +654,7 @@ class CCUSPreProcessing {
     let literals: internLiteralsHandling[] = [];
 
     const newCode: string = code.replace(
-      isStringRegex, // everything in the specified format
+      replaceLiteralsForm, // everything in the specified format
       (
         placeholder // for every literal inside the code
       ) => {
