@@ -52,7 +52,7 @@ const isLiteralRegex: RegExp =
 
 const literalPlaceholder: RegExp = /\$\d+\$/g;
 const isUseStatement: RegExp =
-  /\buse ((?:"[a-zA-Z][a-zA-Z0-9 ]*")|(?:\$[0-9]+))/g;
+  /\buse ((?:"[a-zA-Z][a-zA-Z0-9]*")|(?:\$[0-9]+\$))/g;
 const isDefStatement: RegExp = /\bdef [a-zA-Z][a-zA-Z0-9]* [\s\S]*?\n/g;
 
 const isWord: (word: string) => RegExp = (word: string) =>
