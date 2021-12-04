@@ -47,7 +47,7 @@ const isBoolRegex: RegExp = /true|false/g;
 const isNumberRegex: RegExp =
   /(?:[+-]?(?:0[dDbBoOxX][+-]?)?[0-9]+(?:\.[0-9]*)?([eEpP][+-]?[0-9]+)?)|(?:[+-]?(?:0[dDbBoOxX][+-]?)?[0-9]*(?:\.[0-9]+)([eEpP][+-]?[0-9]+)?)/g;
 const isLiteralRegex: RegExp =
-  /true|false|(?:"(?:\\"|[^"])*")|(?:[+-]?(?:0[dDbBoOxX][+-]?)?[0-9]+(?:\.[0-9]*)?([eEpP][+-]?[0-9]+)?)|(?:[+-]?(?:0[dDbBoOxX][+-]?)?[0-9]*(?:\.[0-9]+)([eEpP][+-]?[0-9]+)?)/g;
+  /`true|false|(?:"(?:\\"|[^"])*")|`(?:[+-]?(?:0[dDbBoOxX][+-]?)?[0-9]+(?:\.[0-9]*)?([eEpP][+-]?[0-9]+)?)|(?:[+-]?(?:0[dDbBoOxX][+-]?)?[0-9]*(?:\.[0-9]+)([eEpP][+-]?[0-9]+)?)/g;
 
 const literalPlaceholder: RegExp = /\$\d+\$/g;
 const isUseStatement: RegExp =
