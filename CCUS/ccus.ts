@@ -1,7 +1,8 @@
 // #region types, vars and funcs
+type code = string;
 type alphanumeric = string;
 type identifier = alphanumeric;
-type code = string;
+type token = string;
 
 interface IVariable {
   name: identifier;
@@ -58,7 +59,7 @@ const isWord: (word: string) => RegExp = (word: string) =>
 const Log: (log: any) => void = (log: any) => console.log(log);
 
 function isAlphanumeric(str: string): boolean {
-  return !!str.match(/^[A-Za-z0-9]+$/); // one or more chars AZaz09
+  return !!str.match(/^[A-Za-z0-9]+$/g); // one or more chars AZaz09
 }
 
 function isValidIdentifierName(str: string): boolean {
@@ -88,6 +89,181 @@ enum Type {
   'objs' = 'objs'
 }
 // #endregion
+
+enum tokenType {
+  none,
+  literal,
+  identifier,
+  keyword,
+  symbol
+}
+
+function swapLiterals(code: code): {
+  code: code;
+  literals: internLiteralsHandling[];
+} {
+  // remove all strings before accessing code
+  const literalsHandler: {
+    code: string;
+    literals: internLiteralsHandling[];
+  } = extractLiterals(code, isLiteralRegex, '$');
+  code = literalsHandler.code; // replace the file with the placeholder file
+  return { code: code, literals: literalsHandler.literals }; // the placeholders
+
+  // e.g. `code "sub" code` => `code $0$ code`
+  function extractLiterals(
+    code: code,
+    replaceLiteralsForm: RegExp,
+    replaceSymbol: string
+  ): {
+    code: code;
+    literals: internLiteralsHandling[];
+  } {
+    let id: number = -1;
+    let literals: internLiteralsHandling[] = [];
+
+    const newCode: string = code.replace(
+      replaceLiteralsForm, // everything in the specified format
+      (
+        placeholder // for every literal inside the code
+      ) => {
+        id++;
+        literals.push({
+          literalValue: placeholder, // the value of the to replace literal
+          literalPlaceholder: '$' + id + '$' // the replace value for the literal
+        });
+        return '$' + id + '$';
+      }
+    );
+
+    return { code: newCode, literals: literals };
+
+    // #region manual version
+    // the literals data
+    let literals_: internLiteralsHandling[] = [];
+    // keep track of the current placeholder number
+    let placeholderCount: number = 0;
+
+    for (const literal of code.match(replaceLiteralsForm) ?? []) {
+      // check if already was replaced once
+      const index: number = literals_.findIndex(
+        (s) => s.literalValue === literal
+      );
+
+      if (index === -1) {
+        // new literal
+
+        const placeholderValue: string =
+          replaceSymbol + placeholderCount + replaceSymbol;
+
+        // add the literal to the array
+        literals_.push({
+          literalValue: literal, // the value of the to replace literal
+          literalPlaceholder: placeholderValue // the replace value for the literal
+        });
+
+        // replace the literal with the placeholder (not all occurences!)
+        code = code.replace(literal, placeholderValue);
+        // inc placeholder count
+        placeholderCount++;
+      }
+      // wass already replaced at least once, reuse the placeholder
+      else code = code.replace(literal, literals_[index].literalPlaceholder);
+    }
+
+    return { code: code, literals: literals_ };
+    // #endregion
+  }
+}
+
+const keywords: string[] = [
+  ...Object.values(Type), // types
+  'in', // input from user
+  'out', // output to user
+  'main', // entrypoint function
+  'def', // define a placeholder name for a value (precompile)
+  'use', // use/include (inc) a file
+  'class', // create a class
+  'op', // create an operater
+  'func', // create a function
+  'ret', // return from function
+  'throw', // function did error
+  'const', // constant variable/function (like static)
+  'ref', // referenz variable (can change value inside other context)
+  'if', // if boolean statements
+  'else', // previous if statement was not executed so execute this statement (like an if)
+  'for', // for/loop loop (var x of vars)/(num i = 0; i < n; i++)/(boolean) statement
+  'break', // break inside a for loop
+  'switch', // switch between multiple choices (like an if)
+  'pub', // function/class/variable is accessible from other files
+  'priv', // function/class/variable is not accessible from other files
+  'of', // for for loops
+  'typeof', // get the type of a variable at runtime
+  'imp', // import public variables
+  'new', // create a new object
+  'true', // boolean value
+  'false' // boolean value
+];
+
+// can be followed/preceded by which chars/by which not? TODO
+// numbers: -?(0|[1-9][0-9*])(.[0-9]*)?(e[0-9])?
+const symbols: string[] = [
+  '(', // open bracket (parentheses, math, boolean, arguments)
+  ')', // closing bracket (parentheses, math, boolean, arguments)
+  '{', // open curly bracket (object or body)
+  '}', // closing curly bracket (object or body)
+  '[', // open square bracket (array)
+  ']', // closing square bracket (array)
+  ',', // seperator (array, object, arguments in function)
+  '//', // comment
+  '/*', // multiline comment start
+  '/**', // multiline comment with descriptors start
+  '*/', // multiline comment end
+  ';', // end of a statement
+  '.', // point, class/exports
+  '=', // assigment
+  '?', // optional argument in function
+  '"', // string identifier
+  '\\', // escape character in string
+  '+', // add, also strings
+  '*', // multiply
+  '-', // subtrackt
+  '/', // divide
+  '**', // exponent
+  '__', // root
+  '%', // mod
+  '+=', // add val to var and save in var
+  '*=', // ""
+  '-=', // ""
+  '/=', // ""
+  '**=', // ""
+  '__=', // ""
+  '%=', // ""
+  '++', // increase by 1
+  '--', // decrease by 1
+  '==', // is equal
+  '<', // is smaller than
+  '>', // is bigger than
+  '<=', // is smaller or equal than
+  '>=', // is bigger or equal than
+  '!', // not (boolean expression)
+  '&&', // and (boolean expression)
+  '||', // or (boolean expression)
+  '&', // and (bit manipulation)
+  '|', // or (bit manipulation)
+  '^', // xor (bit manipulation)
+  '~', // not (bit manipulation)
+  '(s)', // toString()
+  ':', // for each/ key value pair seperator TODO
+  '_', // number seperator
+  ' ', // whitespace 0
+  '\n', // whitespace 1
+  '\t', // whitesspace 2
+  '[]' // array operator
+  //'PI', // 3.1415926535897931
+  //'TAU', // 6.2831853071795862
+  //'E' // 2.71828
+];
 
 class CCUS {
   /**
@@ -119,95 +295,6 @@ class CCUS {
    * Clamp() Returns value clamped to the inclusive range of min and max.
    * CopySign(double magnitude, double sign) Returns the first floating-point argument with the sign of the second floating-point argument.
    */
-
-  keywords: string[] = [
-    ...Object.values(Type), // types
-    'in', // input from user
-    'out', // output to user
-    'main', // entrypoint function
-    'def', // define a placeholder name for a value (precompile)
-    'use', // use/include (inc) a file
-    'class', // create a class
-    'op', // create an operater
-    'func', // create a function
-    'ret', // return from function
-    'throw', // function did error
-    'const', // constant variable/function (like static)
-    'ref', // referenz variable (can change value inside other context)
-    'if', // if boolean statements
-    'else', // previous if statement was not executed so execute this statement (like an if)
-    'for', // for/loop loop (var x of vars)/(num i = 0; i < n; i++)/(boolean) statement
-    'break', // break inside a for loop
-    'switch', // switch between multiple choices (like an if)
-    'pub', // function/class/variable is accessible from other files
-    'priv', // function/class/variable is not accessible from other files
-    'of', // for for loops
-    'typeof', // get the type of a variable at runtime
-    'imp', // import public variables
-    'new', // create a new object
-    'true', // boolean value
-    'false' // boolean value
-  ];
-
-  // can be followed/preceded by which chars/by which not? TODO
-  // numbers: -?(0|[1-9][0-9*])(.[0-9]*)?(e[0-9])?
-  preservedCharacters: string[] = [
-    '(', // open bracket (parentheses, math, boolean, arguments)
-    ')', // closing bracket (parentheses, math, boolean, arguments)
-    '{', // open curly bracket (object or body)
-    '}', // closing curly bracket (object or body)
-    '[', // open square bracket (array)
-    ']', // closing square bracket (array)
-    ',', // seperator (array, object, arguments in function)
-    '//', // comment
-    '/*', // multiline comment start
-    '/**', // multiline comment with descriptors start
-    '*/', // multiline comment end
-    ';', // end of a statement
-    '.', // point, class/exports
-    '=', // assigment
-    '?', // optional argument in function
-    '"', // string identifier
-    '\\', // escape character in string
-    '+', // add, also strings
-    '*', // multiply
-    '-', // subtrackt
-    '/', // divide
-    '**', // exponent
-    '__', // root
-    '%', // mod
-    '+=', // add val to var and save in var
-    '*=', // ""
-    '-=', // ""
-    '/=', // ""
-    '**=', // ""
-    '__=', // ""
-    '%=', // ""
-    '++', // increase by 1
-    '--', // decrease by 1
-    '==', // is equal
-    '<', // is smaller than
-    '>', // is bigger than
-    '<=', // is smaller or equal than
-    '>=', // is bigger or equal than
-    '!', // not (boolean expression)
-    '&&', // and (boolean expression)
-    '||', // or (boolean expression)
-    '&', // and (bit manipulation)
-    '|', // or (bit manipulation)
-    '^', // xor (bit manipulation)
-    '~', // not (bit manipulation)
-    '(s)', // toString()
-    ':', // for each/ key value pair seperator TODO
-    '_', // number seperator
-    ' ', // whitespace 0
-    '\n', // whitespace 1
-    '\t', // whitesspace 2
-    '[]' // array operator
-    //'PI', // 3.1415926535897931
-    //'TAU', // 6.2831853071795862
-    //'E' // 2.71828
-  ];
 
   public static RunCC(
     mainFile: string,
@@ -565,7 +652,7 @@ class CCUSPreProcessing {
     const literalData: {
       code: string;
       literals: internLiteralsHandling[];
-    } = this.swapLiterals(code);
+    } = swapLiterals(code);
     code = literalData.code;
 
     // remove all the comments and whitespaces
@@ -592,6 +679,8 @@ class CCUSPreProcessing {
     //});
     Log(code);
 
+    // reinsert all the literals
+
     return code;
   }
 
@@ -609,7 +698,7 @@ class CCUSPreProcessing {
    *
    * @returns Code without comments
    */
-  public static removeCommentsWhitespaces(code: code): code[] {
+  private static removeCommentsWhitespaces(code: code): code[] {
     // format code and split them by line (for the rest)
     // attention: this is before the check for preCompile statements!!
 
@@ -628,86 +717,8 @@ class CCUSPreProcessing {
       .filter((s) => !s.match(/^ *$/g)); // remove empty strings in the array;
   }
 
-  public static swapLiterals(code: code): {
-    code: code;
-    literals: internLiteralsHandling[];
-  } {
-    // remove all strings before accessing code
-    const literalsHandler: {
-      code: string;
-      literals: internLiteralsHandling[];
-    } = this.extractLiterals(code, isLiteralRegex, '$');
-    code = literalsHandler.code; // replace the file with the placeholder file
-    return { code: code, literals: literalsHandler.literals }; // the placeholders
-  }
-
-  // e.g. `code "sub" code` => `code $0$ code`
-  public static extractLiterals(
-    code: code,
-    replaceLiteralsForm: RegExp,
-    replaceSymbol: string
-  ): {
-    code: code;
-    literals: internLiteralsHandling[];
-  } {
-    let id: number = -1;
-    let literals: internLiteralsHandling[] = [];
-
-    const newCode: string = code.replace(
-      replaceLiteralsForm, // everything in the specified format
-      (
-        placeholder // for every literal inside the code
-      ) => {
-        id++;
-        literals.push({
-          literalValue: placeholder, // the value of the to replace literal
-          literalPlaceholder: '$' + id + '$' // the replace value for the literal
-        });
-        return '$' + id + '$';
-      }
-    );
-
-    return { code: newCode, literals: literals };
-
-    // #region manual version
-    // the literals data
-    let literals_: internLiteralsHandling[] = [];
-    // keep track of the current placeholder number
-    let placeholderCount: number = 0;
-
-    for (const literal of code.match(replaceLiteralsForm) ?? []) {
-      // check if already was replaced once
-      const index: number = literals_.findIndex(
-        (s) => s.literalValue === literal
-      );
-
-      if (index === -1) {
-        // new literal
-
-        const placeholderValue: string =
-          replaceSymbol + placeholderCount + replaceSymbol;
-
-        // add the literal to the array
-        literals_.push({
-          literalValue: literal, // the value of the to replace literal
-          literalPlaceholder: placeholderValue // the replace value for the literal
-        });
-
-        // replace the literal with the placeholder (not all occurences!)
-        code = code.replace(literal, placeholderValue);
-        // inc placeholder count
-        placeholderCount++;
-      }
-      // wass already replaced at least once, reuse the placeholder
-      else code = code.replace(literal, literals_[index].literalPlaceholder);
-    }
-
-    return { code: code, literals: literals_ };
-    // #endregion
-  }
-
   // e.g. `code $0$ code` => `code "sub" code`
-  public static insertLiterals(
+  private static insertLiterals(
     code: code,
     placeholderForm: RegExp,
     literalsData: internLiteralsHandling[]
@@ -792,7 +803,95 @@ class CCUSPreProcessing {
 // preprocessed source code gets down to simpler code (asm)
 class CCUSCompiling {
   // get all the tokens of the code ("int" is a token and "++" too)
-  static Lexer = class {};
+  static Lexer = class {
+    public static Lexer(code: code): [token, tokenType][] {
+      const tokens: [token, tokenType][] = [];
+
+      // get literals
+      const removedLiterals: {
+        literals: internLiteralsHandling[];
+        code: code;
+      } = swapLiterals(code);
+      const literalData: internLiteralsHandling[] = removedLiterals.literals;
+      const codeWithoutLiterals: code = removedLiterals.code;
+
+      let lastTokenState: tokenType = tokenType.none;
+      let curInput: string = '';
+      // go through each character and sort them together
+      for (const char of codeWithoutLiterals) {
+        // TODO, spacebar means it is finished
+        const curTestInput: string = curInput + char;
+
+        const oldTokenType: tokenType = getTokenType(curInput);
+        const newTokenType: tokenType = getTokenType(curTestInput);
+
+        if (newTokenType === tokenType.literal) {
+          // can be nothing else, because literals are replaced with unic $ symbol
+          tokens.push([curTestInput, tokenType.identifier]);
+          curInput = '';
+          continue;
+        }
+
+        if (newTokenType === tokenType.none) {
+          // it was probably before something
+          // ret -> retu -> return, once correct, after wrong, then correct again
+          if (
+            oldTokenType === tokenType.keyword &&
+            newTokenType === tokenType.none
+          ) {
+            tokens.push([curTestInput, tokenType.identifier]);
+            curInput = '';
+            continue;
+          } else if (
+            oldTokenType === tokenType.keyword &&
+            newTokenType === tokenType.none
+          ) {
+          }
+        }
+
+        // no one hit
+        // so curInput could be right while it with the next char not
+        // or curInput isnt a valid symbol yet
+        // check if last input was ready enough
+        // own function which returns what it is
+
+        // check if literal placeholder
+        // check if symbol
+        // check if keyword
+        // check if identifier
+      }
+
+      // return the answer
+      return tokens;
+
+      function isLiteralPlaceholder(str: string): boolean {
+        return !!str.match(literalPlaceholder);
+      }
+
+      function isSymbol(str: string): boolean {
+        return symbols.includes(str);
+      }
+
+      function isKeyword(str: string): boolean {
+        return keywords.includes(str);
+      }
+
+      function isIdentifier(str: string): boolean {
+        return isValidIdentifierName(str);
+      }
+
+      function getTokenType(str: string): tokenType {
+        let ans: tokenType = tokenType.none;
+
+        if (isLiteralPlaceholder(str)) ans = tokenType.literal;
+        else if (isSymbol(str)) ans = tokenType.symbol;
+        else if (isKeyword(str)) ans = tokenType.keyword;
+        else if (isIdentifier(str)) ans = tokenType.identifier;
+
+        return ans;
+      }
+    }
+  };
 
   // get the syntax of every statement => parse tree
   static syntaxAnalyser = class {};
@@ -830,6 +929,7 @@ f = g/**//h;
 + p; 
 `;
 
-console.log(CCUSPreProcessing.swapLiterals(str));
+const preprocessedCode: code = CCUSPreProcessing.preProcess(str);
+console.log(CCUSCompiling.Lexer.Lexer(preprocessedCode));
+
 //CCUS.RunCC(CCUS.testCode);
-//CCUSPreProcessing.preCompile(CCUS.testCode);
