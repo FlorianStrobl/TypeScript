@@ -54,6 +54,7 @@ const isUseStatement: RegExp =
   /\buse ((?:"[a-zA-Z][a-zA-Z0-9]*")|(?:\$[0-9]+\$))/g;
 const isDefStatement: RegExp = /\bdef [a-zA-Z][a-zA-Z0-9]* [\s\S]*?\n/g;
 
+// dangerous, cause invalid characters are possible in the word string
 const isWord: (word: string) => RegExp = (word: string) =>
   new RegExp(`\b${word}\b`, 'g');
 const Log: (log: any) => void = (log: any) => console.log(log);
