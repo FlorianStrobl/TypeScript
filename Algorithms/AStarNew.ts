@@ -40,6 +40,8 @@ class AStars {
   private _goalCoords: vec;
 
   public nodes: (node | -1)[];
+
+  private sqrt2: number;
   // #endregion
 
   constructor(
@@ -49,6 +51,8 @@ class AStars {
     goalCoords: vec,
     wallCoords: vec[]
   ) {
+    this.sqrt2 = Math.sqrt(2);
+
     // set lengths
     this._xLength = xLength;
     this._yLength = yLength;
@@ -284,11 +288,75 @@ class AStars {
 
   // heuristic cost
   private getHCost(coords1: vec, coords2: vec): number {
-    // TODO
+    let ans: number = 0;
+
+    enum _direction {
+      straight,
+      north_east,
+      east_south,
+      south_west,
+      west_north
+    }
+    const directionMatrix: object = {
+      '1': [1, -1],
+      '2': [1, 1],
+      '3': [-1, 1],
+      '4': [-1, -1]
+    };
+
     return Math.sqrt(
       Math.abs(coords1.x - coords2.x) ** 2 +
         Math.abs(coords1.y - coords2.y) ** 2
     );
+
+    // TODO bring it to work
+
+    while (true) {
+      if (coords1.x === coords2.x && coords1.y === coords2.y) return ans;
+
+      // get the direction from coords2 in relation to coords1
+      let direction: _direction = getDirection(coords1, coords2);
+
+      if (direction === _direction.straight) {
+        console.log(coords1, coords2, this.sqrt2);
+        if (coords1.x === coords2.x)
+          return ans + Math.abs(coords1.y - coords2.y);
+        else return ans + Math.abs(coords1.x - coords2.x);
+      }
+
+      // TODO test if it works
+      ans += this.sqrt2;
+      switch (direction) {
+        case _direction.north_east:
+          coords1.x = coords1.x + directionMatrix['1'][0];
+          coords1.y = coords1.y + directionMatrix['1'][1];
+          break;
+        case _direction.east_south:
+          coords1.x = coords1.x + directionMatrix['2'][0];
+          coords1.y = coords1.y + directionMatrix['2'][1];
+          break;
+        case _direction.south_west:
+          coords1.x = coords1.x + directionMatrix['3'][0];
+          coords1.y = coords1.y + directionMatrix['3'][1];
+          break;
+        case _direction.west_north:
+          coords1.x = coords1.x + directionMatrix['4'][0];
+          coords1.y = coords1.y + directionMatrix['4'][1];
+          break;
+      }
+    }
+
+    function getDirection(_coords1: vec, _coords2: vec): _direction {
+      if (_coords1.x === _coords2.x || _coords1.y === _coords2.y)
+        return _direction.straight;
+      else if (_coords1.x < _coords2.x && _coords1.y > _coords2.y)
+        return _direction.north_east;
+      else if (_coords1.x < _coords2.x && _coords1.y < _coords2.y)
+        return _direction.east_south;
+      else if (_coords1.x > _coords2.x && _coords1.y > _coords2.x)
+        return _direction.west_north;
+      else return _direction.south_west;
+    }
   }
 
   // way cost, only for neighbour nodes
