@@ -3,7 +3,49 @@
 <html>
   <head> </head>
   <body>
-    <canvas id="canvas" width="100px" height="100px"></canvas>
+    <canvas
+      id="canvas"
+      width="100px"
+      height="100px"
+      style="opacity: 80%; position: absolute"
+    ></canvas>
+    <img
+      id="cat"
+      style="
+        pointer-events: none;
+        position: absolute;
+        left: 98px;
+        top: 98px;
+        opacity: 50%;
+        width: 1250px;
+      "
+      src="https://cdn.discordapp.com/attachments/793561478258753556/916422487586250822/unknown.png"
+    />
+
+    <div class="slidecontainer">
+      <input
+        id="opacitySlider"
+        type="range"
+        min="1"
+        max="100"
+        value="50"
+        class="slider"
+        style="width: 200px; margin-top: 1100px"
+        id="myRange"
+      />
+    </div>
+    <div class="sizeContainer">
+      <input
+        id="sizeSlider"
+        type="range"
+        min="1"
+        max="100"
+        value="50"
+        class="slider"
+        style="width: 200px; margin-top: 10px"
+        id="myRange"
+      />
+    </div>
   </body>
 </html>
 
@@ -35,17 +77,17 @@
   let newGoalField = undefined;
 
   function drawMain(data = fieldInfos) {
-    console.log('exec 1');
     // fields itself
     for (let y = 0; y < yLength; ++y)
       for (let x = 0; x < xLength; ++x) setField(x, y, data[y][x][0], false);
 
     drawGrid();
     drawGridAxes();
+    console.clear();
   }
 
   function drawField(x, y, size, color, text1, text2) {
-    console.log('exec 2');
+    console.log('drawed a new field');
 
     // field pixel
     ctx.fillStyle = color;
@@ -283,12 +325,24 @@
 
   const fieldInfos = [
     [
+      ['#00ff00', '2.00', '0.00'],
+      ['#ff00ff', '1.00', '1.00'],
+      ['#ff0000', '0.00', '2.00'],
       ['#ffffff', '-', '-'],
       ['#ffffff', '-', '-'],
-      ['#ffff00', '7.07', '2.41'],
-      ['#ffff00', '7.00', '1.41'],
-      ['#ffff00', '7.07', '1.00'],
-      ['#ffff00', '7.28', '1.41'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-']
+    ],
+    [
+      ['#ffff00', '2.24', '1.00'],
+      ['#ffff00', '1.41', '1.41'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
       ['#ffffff', '-', '-'],
       ['#ffffff', '-', '-'],
       ['#ffffff', '-', '-'],
@@ -297,70 +351,10 @@
     [
       ['#ffffff', '-', '-'],
       ['#ffffff', '-', '-'],
-      ['#ffff00', '6.08', '2.00'],
-      ['#00ffff', '6.00', '1.00'],
-      ['#00ff00', '6.08', '0.00'],
-      ['#ffff00', '6.32', '1.00'],
-      ['#ffff00', '6.71', '2.83'],
       ['#ffffff', '-', '-'],
       ['#ffffff', '-', '-'],
-      ['#ffffff', '-', '-']
-    ],
-    [
-      ['#ffffff', '-', '-'],
-      ['#ffff00', '5.39', '4.24'],
-      ['#808080', '-', '-'],
-      ['#00ffff', '5.00', '1.41'],
-      ['#ff00ff', '5.10', '1.00'],
-      ['#00ffff', '5.39', '1.41'],
-      ['#ffff00', '5.83', '2.41'],
       ['#ffffff', '-', '-'],
       ['#ffffff', '-', '-'],
-      ['#ffffff', '-', '-']
-    ],
-    [
-      ['#ffffff', '-', '-'],
-      ['#ffff00', '4.47', '3.83'],
-      ['#00ffff', '4.12', '2.83'],
-      ['#ff00ff', '4.00', '2.41'],
-      ['#808080', '-', '-'],
-      ['#00ffff', '4.47', '2.41'],
-      ['#ffff00', '5.00', '2.83'],
-      ['#ffffff', '-', '-'],
-      ['#ffffff', '-', '-'],
-      ['#ffffff', '-', '-']
-    ],
-    [
-      ['#ffffff', '-', '-'],
-      ['#ffff00', '3.61', '4.24'],
-      ['#808080', '-', '-'],
-      ['#ff00ff', '3.00', '3.41'],
-      ['#00ffff', '3.16', '3.83'],
-      ['#00ffff', '3.61', '3.41'],
-      ['#ffff00', '4.24', '3.83'],
-      ['#ffffff', '-', '-'],
-      ['#ffffff', '-', '-'],
-      ['#ffffff', '-', '-']
-    ],
-    [
-      ['#ffffff', '-', '-'],
-      ['#ffff00', '2.83', '5.83'],
-      ['#00ffff', '2.24', '4.83'],
-      ['#ff00ff', '2.00', '4.41'],
-      ['#00ffff', '2.24', '4.83'],
-      ['#ffff00', '2.83', '4.41'],
-      ['#ffff00', '3.61', '4.83'],
-      ['#ffffff', '-', '-'],
-      ['#ffffff', '-', '-'],
-      ['#ffffff', '-', '-']
-    ],
-    [
-      ['#ffffff', '-', '-'],
-      ['#ffff00', '2.24', '6.24'],
-      ['#ff00ff', '1.41', '5.83'],
-      ['#808080', '-', '-'],
-      ['#ffff00', '1.41', '5.83'],
-      ['#ffff00', '2.24', '6.24'],
       ['#ffffff', '-', '-'],
       ['#ffffff', '-', '-'],
       ['#ffffff', '-', '-'],
@@ -369,8 +363,56 @@
     [
       ['#ffffff', '-', '-'],
       ['#ffffff', '-', '-'],
-      ['#ffff00', '1.00', '6.83'],
-      ['#ff0000', '0.00', '7.24'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-']
+    ],
+    [
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-']
+    ],
+    [
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-']
+    ],
+    [
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-']
+    ],
+    [
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
+      ['#ffffff', '-', '-'],
       ['#ffffff', '-', '-'],
       ['#ffffff', '-', '-'],
       ['#ffffff', '-', '-'],
@@ -408,6 +450,33 @@
   //by Elias Cuin
 </script>
 
+<script>
+  let slider = document.getElementById('opacitySlider');
+  let slider2 = document.getElementById('sizeSlider');
+  // Display the default slider value
+
+  // Update the current slider value (each time you drag the slider handle)
+  slider.oninput = () =>
+    (document.getElementById('cat').style.opacity =
+      slider.value.toString() + '%');
+  slider2.oninput = () =>
+    (document.getElementById('cat').style.width =
+      (slider2.value * 25).toString() + 'px');
+
+  function start() {
+    slider.value = 50;
+    slider2.value = 50;
+
+    document.getElementById('cat').style.opacity =
+      slider.value.toString() + '%';
+
+    document.getElementById('cat').style.width =
+      (slider2.value * 25).toString() + 'px';
+  }
+
+  start();
+</script>
+
 <style>
   #canvas {
     background-color: rgb(36, 72, 72);
@@ -416,5 +485,46 @@
     image-rendering: -webkit-crisp-edges;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
+  }
+</style>
+
+<style>
+  .slidecontainer {
+    width: 100%; /* Width of the outside container */
+  }
+
+  /* The slider itself */
+  .slider {
+    -webkit-appearance: none; /* Override default CSS styles */
+    appearance: none;
+    width: 100%; /* Full-width */
+    height: 25px; /* Specified height */
+    background: #d3d3d3; /* Grey background */
+    outline: none; /* Remove outline */
+    opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+    -webkit-transition: 0.2s; /* 0.2 seconds transition on hover */
+    transition: opacity 0.2s;
+  }
+
+  /* Mouse-over effects */
+  .slider:hover {
+    opacity: 1; /* Fully shown on mouse-over */
+  }
+
+  /* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Override default look */
+    appearance: none;
+    width: 25px; /* Set a specific slider handle width */
+    height: 25px; /* Slider handle height */
+    background: #04aa6d; /* Green background */
+    cursor: pointer; /* Cursor on hover */
+  }
+
+  .slider::-moz-range-thumb {
+    width: 25px; /* Set a specific slider handle width */
+    height: 25px; /* Slider handle height */
+    background: #04aa6d; /* Green background */
+    cursor: pointer; /* Cursor on hover */
   }
 </style>
