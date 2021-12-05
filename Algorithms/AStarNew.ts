@@ -66,7 +66,7 @@ class AStars {
     this.nodes = [];
     for (let i = 0; i < xLength * yLength; ++i) this.nodes.push(-1);
 
-    // set the start, goal and wall coords
+    // set the start and the goal coords
     this.setNode(startCoords, {
       value: value.start,
       state: state.explored,
@@ -94,7 +94,7 @@ class AStars {
       arrivedAtGoal = this.exploreNeighbourNodes(cheapestNode);
 
       // found the goal node, stop
-      if (arrivedAtGoal === true) break;
+      if (arrivedAtGoal) break;
     }
 
     //if (arrivedAtGoal) console.log('Found the goal!');
@@ -221,11 +221,11 @@ class AStars {
   }
 
   private retracePath(): vec[] {
-    let pathNodes: vec[] = [];
+    const pathNodes: vec[] = [];
 
     let lastNode: node = this.getNode(this._goalCoords);
     while (true) {
-      // no nodes was connected so no full path exists
+      // no nodes was connected to the lastNode => no full(!) path exists
       if (lastNode.value === value.empty) return [];
       if (lastNode.value === value.start) break; // stop at the starting node
       pathNodes.push(lastNode.cameFrom); // add current node to path
