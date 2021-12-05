@@ -1,3 +1,6 @@
+// TODO: walls get initialized in the array, while it could be just done in getNode() to save performance
+// TODO2: better heuristic hCost
+
 // #region enums
 enum value {
   empty = -1,
@@ -86,7 +89,6 @@ class AStars {
     while (true) {
       // get the cheapest explored node
       let cheapestNode: vec = this.getCheapestNode();
-
       // no more nodes to traverse there
       if (cheapestNode.x === -1) break;
 
@@ -119,8 +121,8 @@ class AStars {
         // if node is empty, was not explored or is a wall, skip
         if (
           currentNode.value === value.empty ||
-          currentNode.state !== state.explored ||
-          currentNode.value === value.wall
+          currentNode.value === value.wall ||
+          currentNode.state !== state.explored
         )
           continue;
 
@@ -130,11 +132,8 @@ class AStars {
           this.getHCost(currentNodeCoords, this._goalCoords);
 
         // if cheapest node is null, update it
-        if (cheapestNode.x === -1) {
-          cheapestNodeFCost = currentNodeFCost;
-          cheapestNode = currentNodeCoords;
-          // if current node is cheaper in total (F cost) update it
-        } else if (currentNodeFCost < cheapestNodeFCost) {
+        // if current node is cheaper in total (F cost) update it
+        if (cheapestNode.x === -1 || currentNodeFCost < cheapestNodeFCost) {
           cheapestNodeFCost = currentNodeFCost;
           cheapestNode = currentNodeCoords;
         }
@@ -224,49 +223,47 @@ class AStars {
   }
 
   private retracePath(): vec[] {
-    let lastNode: node = this.getNode(this._goalCoords);
     let pathNodes: vec[] = [];
 
+    let lastNode: node = this.getNode(this._goalCoords);
     while (true) {
-      // no nodes was connected so no path exist
+      // no nodes was connected so no full path exists
       if (lastNode.value === value.empty) return [];
-      pathNodes.push(lastNode.cameFrom); // add current node
-      lastNode = this.getNode(lastNode.cameFrom); // set the next node to the linked one
       if (lastNode.value === value.start) break; // stop at the starting node
+      pathNodes.push(lastNode.cameFrom); // add current node to path
+      lastNode = this.getNode(lastNode.cameFrom); // set the next node to the linked one
     }
 
     return pathNodes;
   }
 
   public getNode(coords: vec): node {
-    // out of array
-    if (
-      coords.y * this._xLength + coords.x >= this._xLength * this._yLength ||
-      coords.x < 0 ||
-      coords.y < 0
-    )
+    const index: number = coords.y * this._xLength + coords.x;
+
+    // out of array, invalid node
+    if (index >= this._xLength * this._yLength || coords.x < 0 || coords.y < 0)
       return {
-        value: value.empty,
+        value: value.empty, // maybe value.invalid
         state: state.unexplored,
         gCost: -1,
         cameFrom: { x: -1, y: -1 }
       };
 
-    // get raw node data
-    const node: node | -1 = this.nodes[coords.y * this._xLength + coords.x];
+    // get node data
+    const node: node | -1 = this.nodes[index];
     // TODO, if null return a default value
     if (node === -1)
       return {
         value: value.empty,
         state: state.unexplored,
-        gCost: 0,
+        gCost: 0, // TODO why not -1
         cameFrom: { x: -1, y: -1 }
       };
     else return node;
   }
 
-  private setNode(coords: vec, _value: node): void {
-    this.nodes[coords.y * this._xLength + coords.x] = _value;
+  private setNode(coords: vec, value: node): void {
+    this.nodes[coords.y * this._xLength + coords.x] = value;
   }
 
   private updateNode(coords: vec, updateValue: (n: node) => node): void {
