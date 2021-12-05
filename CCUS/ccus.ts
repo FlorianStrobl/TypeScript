@@ -92,11 +92,11 @@ enum Type {
 // #endregion
 
 enum tokenType {
-  none,
-  literal,
-  identifier,
-  keyword,
-  symbol
+  none, // invalid char
+  literal, // a boolean, number or string
+  identifier, // var and func names
+  keyword, // reserved word like func
+  symbol // operator and separator like + and .
 }
 
 function swapLiterals(code: code): {
@@ -864,6 +864,19 @@ class CCUSCompiling {
 
       // return the answer
       return tokens;
+
+      function couldBeKeyword(str: string): string[] {
+        let possibilities: string[] = [];
+        for (const k of keywords)
+          if (k.startsWith(str)) possibilities.push(str);
+        return possibilities;
+      }
+
+      function couldBeSymbol(str: string): string[] {
+        let possibilities: string[] = [];
+        for (const s of symbols) if (s.startsWith(str)) possibilities.push(str);
+        return possibilities;
+      }
 
       function isLiteralPlaceholder(str: string): boolean {
         return !!str.match(literalPlaceholder);
