@@ -38,6 +38,7 @@ class AStars {
 
   private _startCoords: vec;
   private _goalCoords: vec;
+  private _wallCoords: vec[];
 
   public nodes: (node | -1)[];
 
@@ -59,6 +60,7 @@ class AStars {
 
     this._startCoords = startCoords;
     this._goalCoords = goalCoords;
+    this._wallCoords = wallCoords;
 
     // set all the nodes to -1/null
     this.nodes = [];
@@ -77,14 +79,6 @@ class AStars {
       cameFrom: { x: -1, y: -1 },
       gCost: -1
     });
-    // optimize
-    for (const wall of wallCoords)
-      this.setNode(wall, {
-        value: value.wall,
-        state: state.unexplored,
-        cameFrom: { x: -1, y: -1 },
-        gCost: -1
-      });
   }
 
   public pathfinding(): vec[] {
@@ -244,8 +238,17 @@ class AStars {
   public getNode(coords: vec): node {
     const index: number = coords.y * this._xLength + coords.x;
 
-    // out of array, invalid node
+    // check if it is a wall
+    if (this._wallCoords.some((c) => c.x === coords.x && c.y === coords.y))
+      return {
+        value: value.wall,
+        state: state.unexplored,
+        cameFrom: { x: -1, y: -1 },
+        gCost: -1
+      };
+
     if (index >= this._xLength * this._yLength || coords.x < 0 || coords.y < 0)
+      // out of array, invalid node
       return {
         value: value.empty, // maybe value.invalid
         state: state.unexplored,
@@ -275,15 +278,17 @@ class AStars {
 
     // update the coords, or set a default value
     if (currentNode.value !== value.empty)
-      this.nodes[coords.y * this._xLength + coords.x] =
-        updateValue(currentNode);
+      this.setNode(coords, updateValue(currentNode));
     else
-      this.nodes[coords.y * this._xLength + coords.x] = updateValue({
-        value: value.normal,
-        state: state.unexplored,
-        gCost: 0,
-        cameFrom: { x: -1, y: -1 }
-      });
+      this.setNode(
+        coords,
+        updateValue({
+          value: value.normal,
+          state: state.unexplored,
+          gCost: 0,
+          cameFrom: { x: -1, y: -1 }
+        })
+      );
   }
 
   // heuristic cost
@@ -387,9 +392,18 @@ class AStars {
 
     let x: number = 0;
     let y: number = 0;
-    for (const _node of this.nodes) {
+    for (let _node of this.nodes) {
       // color
       let color: string = '#ffffff';
+
+      // handle wall coords correctly
+      if (this._wallCoords.some((c) => c.x === x && c.y === y))
+        _node = {
+          value: value.wall,
+          state: state.unexplored,
+          cameFrom: { x: -1, y: -1 },
+          gCost: -1
+        };
 
       if (_node !== -1) {
         switch (_node.value) {
@@ -451,7 +465,6 @@ class AStars {
 }
 
 const _aStar = new AStars(10, 10, { x: 0, y: 0 }, { x: 9, y: 9 }, [
-  { x: 1, y: 0 },
   { x: 1, y: 1 },
   { x: 0, y: 1 }
 ]);
