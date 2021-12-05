@@ -10,16 +10,16 @@
       style="opacity: 80%; position: absolute"
     ></canvas>
     <img
-      id="cat"
+      id="img"
       style="
         pointer-events: none;
         position: absolute;
-        left: 98px;
-        top: 98px;
+        left: 0px;
+        top: 0px;
         opacity: 50%;
         width: 1250px;
       "
-      src="https://cdn.discordapp.com/attachments/793561478258753556/916422487586250822/unknown.png"
+      src="https://media.discordapp.net/attachments/484389049600049152/916420346305974282/unknown.png"
     />
 
     <div class="slidecontainer">
@@ -30,7 +30,7 @@
         max="100"
         value="50"
         class="slider"
-        style="width: 200px; margin-top: 1100px"
+        style="width: 200px; margin-top: 30px; margin-left: 50px"
         id="myRange"
       />
     </div>
@@ -42,7 +42,7 @@
         max="100"
         value="50"
         class="slider"
-        style="width: 200px; margin-top: 10px"
+        style="width: 200px; margin-top: 10px; margin-left: 50px"
         id="myRange"
       />
     </div>
@@ -52,17 +52,13 @@
 <script>
   const xLength = 10;
   const yLength = 10;
-  const fieldScale = 90;
-  const windowWidth = xLength * 100 + fieldScale;
-  const windowHeight = yLength * 100 + fieldScale;
+  let fieldScale = 90;
 
   // 0: wall, 1: start, 2: goal
   let mouseVal = 0;
 
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
-  canvas.width = windowWidth;
-  canvas.height = windowHeight;
 
   const cRect = canvas.getBoundingClientRect();
 
@@ -84,6 +80,7 @@
     drawGrid();
     drawGridAxes();
     console.clear();
+    console.log(fieldScale);
   }
 
   function drawField(x, y, size, color, text1, text2) {
@@ -446,35 +443,47 @@
     ]
   ];
 
-  drawMain();
-  //by Elias Cuin
-</script>
-
-<script>
+  // #region slider
   let slider = document.getElementById('opacitySlider');
   let slider2 = document.getElementById('sizeSlider');
   // Display the default slider value
 
   // Update the current slider value (each time you drag the slider handle)
   slider.oninput = () =>
-    (document.getElementById('cat').style.opacity =
+    (document.getElementById('img').style.opacity =
       slider.value.toString() + '%');
   slider2.oninput = () =>
-    (document.getElementById('cat').style.width =
+    (document.getElementById('img').style.width =
       (slider2.value * 25).toString() + 'px');
 
-  function start() {
+  function sliderStart() {
     slider.value = 50;
     slider2.value = 50;
 
-    document.getElementById('cat').style.opacity =
+    document.getElementById('img').style.opacity =
       slider.value.toString() + '%';
 
-    document.getElementById('cat').style.width =
+    document.getElementById('img').style.width =
       (slider2.value * 25).toString() + 'px';
+
+    fieldScale = (slider.value * 25) / xLength;
+
+    document.getElementById('img').style.left =
+      (fieldScale + 8).toString() + 'px';
+    document.getElementById('img').style.top =
+      (fieldScale + 8).toString() + 'px';
+
+    console.log(fieldScale);
+
+    canvas.width = xLength * fieldScale + 2 * fieldScale;
+    canvas.height = yLength * fieldScale + 2 * fieldScale;
   }
 
-  start();
+  // #endregion
+
+  sliderStart();
+  drawMain();
+  //by Elias Cuin
 </script>
 
 <style>
