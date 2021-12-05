@@ -1,10 +1,10 @@
 // #region enums
 enum value {
+  empty = -1,
   normal = 0,
   start = 1,
   goal = 2,
-  wall = 3,
-  empty = -1
+  wall = 3
 }
 
 enum state {
@@ -30,47 +30,48 @@ interface node {
 
 class AStars {
   // #region vars
-  private xLength: number;
-  private yLength: number;
+  private _xLength: number;
+  private _yLength: number;
 
-  private startCoords: vec;
-  private goalCoords: vec;
+  private _startCoords: vec;
+  private _goalCoords: vec;
 
   public nodes: (node | -1)[];
   // #endregion
 
   constructor(
-    _xLength: number,
-    _yLength: number,
-    _startCoords: vec,
-    _goalCoords: vec,
-    _wallCoords: vec[]
+    xLength: number,
+    yLength: number,
+    startCoords: vec,
+    goalCoords: vec,
+    wallCoords: vec[]
   ) {
     // set lengths
-    this.xLength = _xLength;
-    this.yLength = _yLength;
+    this._xLength = xLength;
+    this._yLength = yLength;
 
-    this.startCoords = _startCoords;
-    this.goalCoords = _goalCoords;
+    this._startCoords = startCoords;
+    this._goalCoords = goalCoords;
 
     // set all the nodes to -1/null
     this.nodes = [];
-    for (let i = 0; i < _xLength * _yLength; ++i) this.nodes.push(-1);
+    for (let i = 0; i < xLength * yLength; ++i) this.nodes.push(-1);
 
     // set the start, goal and wall coords
-    this.setNode(_startCoords, {
+    this.setNode(startCoords, {
       value: value.start,
       state: state.explored,
       cameFrom: { x: -1, y: -1 },
       gCost: 0
     });
-    this.setNode(_goalCoords, {
+    this.setNode(goalCoords, {
       value: value.goal,
       state: state.unexplored,
       cameFrom: { x: -1, y: -1 },
       gCost: -1
     });
-    for (const wall of _wallCoords)
+    // optimize
+    for (const wall of wallCoords)
       this.setNode(wall, {
         value: value.wall,
         state: state.unexplored,
@@ -109,8 +110,8 @@ class AStars {
     let cheapestNode: vec = { x: -1, y: -1 };
     let cheapestNodeFCost: number = -1;
 
-    for (let y = 0; y < this.yLength; ++y)
-      for (let x = 0; x < this.xLength; ++x) {
+    for (let y = 0; y < this._yLength; ++y)
+      for (let x = 0; x < this._xLength; ++x) {
         // for each node
         const currentNodeCoords: vec = { x: x, y: y };
         const currentNode: node = this.getNode(currentNodeCoords);
@@ -125,7 +126,8 @@ class AStars {
 
         // calculate the current F cost
         const currentNodeFCost: number =
-          currentNode.gCost + this.getHCost(currentNodeCoords, this.goalCoords);
+          currentNode.gCost +
+          this.getHCost(currentNodeCoords, this._goalCoords);
 
         // if cheapest node is null, update it
         if (cheapestNode.x === -1) {
@@ -142,7 +144,7 @@ class AStars {
   }
 
   private exploreNeighbourNodes(coords: vec): boolean {
-    this.setNode(coords, undefined, (n) => {
+    this.updateNode(coords, (n) => {
       n.state = state.traversed; // current node is now traversed
       return n;
     });
@@ -170,8 +172,8 @@ class AStars {
       if (
         nodeCoords.x < 0 ||
         nodeCoords.y < 0 ||
-        nodeCoords.x >= this.xLength ||
-        nodeCoords.y >= this.yLength
+        nodeCoords.x >= this._xLength ||
+        nodeCoords.y >= this._yLength
       )
         continue;
 
@@ -196,7 +198,7 @@ class AStars {
 
       // node is the goal, finished
       if (node.value === value.goal) {
-        this.setNode(nodeCoords, undefined, (n) => {
+        this.updateNode(nodeCoords, (n) => {
           n.state = state.explored;
           n.cameFrom = coords;
           n.gCost = currentGCost;
@@ -208,7 +210,7 @@ class AStars {
         // TODO
         // node is valid to explore
         if (currentGCost < node.gCost)
-          this.setNode(nodeCoords, undefined, (n) => {
+          this.updateNode(nodeCoords, (n) => {
             n.state = state.explored;
             n.cameFrom = coords;
             n.gCost = currentGCost;
@@ -222,7 +224,7 @@ class AStars {
   }
 
   private retracePath(): vec[] {
-    let lastNode: node = this.getNode(this.goalCoords);
+    let lastNode: node = this.getNode(this._goalCoords);
     let pathNodes: vec[] = [];
 
     while (true) {
@@ -239,7 +241,7 @@ class AStars {
   public getNode(coords: vec): node {
     // out of array
     if (
-      coords.y * this.xLength + coords.x >= this.xLength * this.yLength ||
+      coords.y * this._xLength + coords.x >= this._xLength * this._yLength ||
       coords.x < 0 ||
       coords.y < 0
     )
@@ -251,7 +253,7 @@ class AStars {
       };
 
     // get raw node data
-    const node: node | -1 = this.nodes[coords.y * this.xLength + coords.x];
+    const node: node | -1 = this.nodes[coords.y * this._xLength + coords.x];
     // TODO, if null return a default value
     if (node === -1)
       return {
@@ -263,32 +265,29 @@ class AStars {
     else return node;
   }
 
-  private setNode(
-    coords: vec,
-    _value?: node | undefined,
-    updateValue?: (n: node) => node
-  ): void {
-    if (_value !== undefined)
-      this.nodes[coords.y * this.xLength + coords.x] = _value;
-    else if (updateValue !== undefined) {
-      const currentNode: node = this.getNode(coords);
+  private setNode(coords: vec, _value: node): void {
+    this.nodes[coords.y * this._xLength + coords.x] = _value;
+  }
 
-      // update the coords, or set a default value
-      if (currentNode.value !== value.empty)
-        this.nodes[coords.y * this.xLength + coords.x] =
-          updateValue(currentNode);
-      else
-        this.nodes[coords.y * this.xLength + coords.x] = updateValue({
-          value: value.normal,
-          state: state.unexplored,
-          gCost: 0,
-          cameFrom: { x: -1, y: -1 }
-        });
-    }
+  private updateNode(coords: vec, updateValue: (n: node) => node): void {
+    const currentNode: node = this.getNode(coords);
+
+    // update the coords, or set a default value
+    if (currentNode.value !== value.empty)
+      this.nodes[coords.y * this._xLength + coords.x] =
+        updateValue(currentNode);
+    else
+      this.nodes[coords.y * this._xLength + coords.x] = updateValue({
+        value: value.normal,
+        state: state.unexplored,
+        gCost: 0,
+        cameFrom: { x: -1, y: -1 }
+      });
   }
 
   // heuristic cost
   private getHCost(coords1: vec, coords2: vec): number {
+    // TODO
     return Math.sqrt(
       Math.abs(coords1.x - coords2.x) ** 2 +
         Math.abs(coords1.y - coords2.y) ** 2
@@ -298,16 +297,19 @@ class AStars {
   // way cost, only for neighbour nodes
   private getRelativGCost(coords1: vec, coords2: vec): number {
     // uses the same math formular to calculate it
-    return this.getHCost(coords1, coords2);
+    return Math.sqrt(
+      Math.abs(coords1.x - coords2.x) ** 2 +
+        Math.abs(coords1.y - coords2.y) ** 2
+    );
   }
 
-  public getNodesData(_path: vec[]): string[][][] {
+  public getNodesData(path: vec[]): string[][][] {
     let pixelInfo: string[][][] = [];
 
     // initialise the nodes field first
-    for (let y = 0; y < this.yLength; ++y) {
+    for (let y = 0; y < this._yLength; ++y) {
       pixelInfo.push([]); // y dimension
-      for (let x = 0; x < this.xLength; ++x) {
+      for (let x = 0; x < this._xLength; ++x) {
         // x dimension
         pixelInfo[y].push([]);
 
@@ -345,25 +347,27 @@ class AStars {
           _node.value !== value.start &&
           _node.value !== value.goal
         )
+          // explored fields
           color = '#ffff00';
         else if (
           _node.state === state.traversed &&
           _node.value !== value.start &&
           _node.value !== value.goal
         )
-          color = '#00ffff';
+          color = '#00ffff'; // traversed fields
 
         if (
-          _path.some((v) => v.x === x && v.y === y) &&
-          !(x === this.startCoords.x && y === this.startCoords.y)
+          path.some((v) => v.x === x && v.y === y) &&
+          !(x === this._startCoords.x && y === this._startCoords.y)
         )
-          color = '#ff00ff';
+          color = '#ff00ff'; // path fields, which are not the start
       }
 
       pixelInfo[y][x][0] = color;
+      // set wall values to -1 and calculate it for the others
       if (_node === -1 || _node.value === value.wall) pixelInfo[y][x][1] = '-';
       else
-        pixelInfo[y][x][1] = this.getHCost({ x: x, y: y }, this.goalCoords)
+        pixelInfo[y][x][1] = this.getHCost({ x: x, y: y }, this._goalCoords)
           .toPrecision(3)
           .toString();
 
@@ -371,7 +375,7 @@ class AStars {
       else pixelInfo[y][x][2] = _node.gCost.toPrecision(3).toString();
 
       // increase counter
-      if (++x >= this.xLength) {
+      if (++x >= this._xLength) {
         x = 0;
         ++y;
       }
@@ -381,7 +385,21 @@ class AStars {
   }
 }
 
-const _aStar = new AStars(10, 10, { x: 0, y: 0 }, { x: 2, y: 0 }, []);
+const _aStar = new AStars(10, 10, { x: 2, y: 0 }, { x: 6, y: 7 }, [
+  { x: 2, y: 7 },
+  { x: 3, y: 6 },
+  { x: 3, y: 7 },
+  { x: 3, y: 5 },
+  { x: 4, y: 5 },
+  { x: 4, y: 4 },
+  { x: 4, y: 3 },
+  { x: 6, y: 3 },
+  { x: 5, y: 3 },
+  { x: 6, y: 2 },
+  { x: 6, y: 1 },
+  { x: 5, y: 1 }
+]);
 const _path = _aStar.pathfinding();
+
 console.log(_path);
 console.log(_aStar.getNodesData(_path));
