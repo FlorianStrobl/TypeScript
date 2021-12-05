@@ -385,20 +385,7 @@ class AStars {
   }
 }
 
-const _aStar = new AStars(10, 10, { x: 2, y: 0 }, { x: 6, y: 7 }, [
-  { x: 2, y: 7 },
-  { x: 3, y: 6 },
-  { x: 3, y: 7 },
-  { x: 3, y: 5 },
-  { x: 4, y: 5 },
-  { x: 4, y: 4 },
-  { x: 4, y: 3 },
-  { x: 6, y: 3 },
-  { x: 5, y: 3 },
-  { x: 6, y: 2 },
-  { x: 6, y: 1 },
-  { x: 5, y: 1 }
-]);
+const _aStar = new AStars(10, 10, { x: 0, y: 0 }, { x: 9, y: 9 }, []);
 const _path = _aStar.pathfinding();
 
 console.log(_path);
