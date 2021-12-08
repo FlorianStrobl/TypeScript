@@ -18,6 +18,7 @@ enum state {
 // #endregion
 
 // #region interfaces
+
 interface vec {
   x: number;
   y: number;
