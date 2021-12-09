@@ -513,7 +513,7 @@ class CCUS {
   def aDef "myVal" // every "aDef" should be replaced with "myVal"
   use "file1" // insert the "file1" file at this position
   def PI 314
-  
+
   // just some empty line
      PI
   otherDef
@@ -524,14 +524,14 @@ class CCUS {
     if (MyFunc(5) == 5) { // if statement with function and == use
       out("fire 1 dash 1"); // output a string
     } else { // else statement
-        out  (  "fire 1 dash 2"   )    ;      
+        out  (  "fire 1 dash 2"   )    ;
     } use "file 2" // use statment in the middle of the file
-  aDef 
-  
+  aDef
+
     str aStr = " Hello\\" world ";
-  
+
     num myNum = -5.3E+5;
-  
+
   // same as the last if just where the else should get called
     if (MyFunc(3) == 7) {
       Log("fire 2 dash 1");
@@ -539,70 +539,70 @@ class CCUS {
       Log("fire 2 dash 2");
     }
   otherDef
-  
+
   // just a normal for loop
     for (num x = 0; x < 5; x++) {
      otherDef Log(x);
     }
-  
+
      num   x    =5    ;
     while (x < 10) {
       out(x);
       x = x + 1;
     }
-  
+
     out(h);
   }
-  
+
   func num MyFunc (num i) {
     const num x = 5;
     out(x);
-  
+
     return i;
-  
+
     func NoArgsNoCode () {
-        
+
     }
   }
-  
+
   // valid comment? // still?
   // this should test if complex spacing is working correctly
   // especially the argument part in the middle
-       func     objs    StrangeFormattedfunc     (  
-         
-  
-       
-          num   
-           
-  // also a valid comment lol 
-  
-          arg2  , str lOl // valid comment   
-          
-          
-           )     
-     
-    
+       func     objs    StrangeFormattedfunc     (
+
+
+
+          num
+
+  // also a valid comment lol
+
+          arg2  , str lOl // valid comment
+
+
+           )
+
+
     {
-  
-  
+
+
                 }
-  
+
   // just declaring a operator as normal
   op num ("++", int x,) {
-  
+
   }
-  
+
   op num ("--", , int x) { }
-  
+
   // benchmark for strange formatting lol
   func
   strs
   haha
   ()
   {}
-  
+
   otherDeffunc obj ANewFuncWhichShouldNotWork(){}
-  
+
   / / 0
   /  / 1
   /  / invalid comment because spaces lmao 2
@@ -940,7 +940,7 @@ f = g/**//h;
   /*//*/ l();
 
   m = n//**/o
-+ p; 
++ p;
 `;
 
 const preprocessedCode: code = CCUSPreProcessing.preProcess(str);
