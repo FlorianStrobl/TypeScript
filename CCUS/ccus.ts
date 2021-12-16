@@ -215,34 +215,42 @@ const symbols: string[] = [
   '}', // closing curly bracket (object or body)
   '[', // open square bracket (array)
   ']', // closing square bracket (array)
+  '.', // point, class/exports
   ',', // seperator (array, object, arguments in function)
+  ';', // end of a statement
   '//', // comment
   '/*', // multiline comment start
   '/**', // multiline comment with descriptors start
   '*/', // multiline comment end
-  ';', // end of a statement
-  '.', // point, class/exports
-  '=', // assigment
+  '=', // variable assigment
   '?', // optional argument in function
   '"', // string identifier
   '\\', // escape character in string
   '+', // add, also strings
-  '*', // multiply
   '-', // subtrackt
+  '*', // multiply
   '/', // divide
   '**', // exponent
   '__', // root
   '%', // mod
   '+=', // add val to var and save in var
-  '*=', // ""
   '-=', // ""
+  '*=', // ""
   '/=', // ""
   '**=', // ""
   '__=', // ""
   '%=', // ""
+  '<<=', // ""
+  '>>=', // ""
+  '&=', // ""
+  '|=', // ""
+  '^=', // ""
+  '&&=', // ""
+  '||=', // ""
   '++', // increase by 1
   '--', // decrease by 1
   '==', // is equal
+  '!=', // is not equal
   '<', // is smaller than
   '>', // is bigger than
   '<=', // is smaller or equal than
@@ -250,17 +258,20 @@ const symbols: string[] = [
   '!', // not (boolean expression)
   '&&', // and (boolean expression)
   '||', // or (boolean expression)
+  '~', // not (bit manipulation)
   '&', // and (bit manipulation)
   '|', // or (bit manipulation)
   '^', // xor (bit manipulation)
-  '~', // not (bit manipulation)
   '(s)', // toString()
   ':', // for each/ key value pair seperator TODO
   '_', // number seperator
   ' ', // whitespace 0
   '\n', // whitespace 1
   '\t', // whitesspace 2
-  '[]' // array operator
+  '[]', // array operator
+  '<<', // left shift operator
+  '>>', // right shift operator
+  '=>' // short function
   //'PI', // 3.1415926535897931
   //'TAU', // 6.2831853071795862
   //'E' // 2.71828
