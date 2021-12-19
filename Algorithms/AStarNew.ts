@@ -18,7 +18,6 @@ enum state {
 // #endregion
 
 // #region interfaces
-
 interface vec {
   x: number;
   y: number;
@@ -59,13 +58,25 @@ class AStars {
     this._xLength = xLength;
     this._yLength = yLength;
 
+    this.initializeValues(startCoords, goalCoords, wallCoords);
+  }
+
+  /**
+   * Resets the Node array, and sets new Coords.
+   */
+  public initializeValues(
+    startCoords: vec,
+    goalCoords: vec,
+    wallCoords: vec[]
+  ): void {
+    // set coords in object
     this._startCoords = startCoords;
     this._goalCoords = goalCoords;
     this._wallCoords = wallCoords;
 
     // set all the nodes to -1/null
     this.nodes = [];
-    for (let i = 0; i < xLength * yLength; ++i) this.nodes.push(-1);
+    for (let i = 0; i < this._xLength * this._yLength; ++i) this.nodes.push(-1);
 
     // set the start and the goal coords
     this.setNode(startCoords, {
@@ -82,6 +93,10 @@ class AStars {
     });
   }
 
+  /**
+   * Returns the path from start to the end field.
+   * If no path found, it returns an empty array.
+   */
   public pathfinding(): vec[] {
     let arrivedAtGoal: boolean = false;
 
