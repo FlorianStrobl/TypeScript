@@ -120,7 +120,9 @@ class AStars {
     return this.retracePath();
   }
 
-  // searches the cheapest node which is in explored state
+  /**
+   * Returns the cheapest node which is in explored state in the node array.
+   */
   private getCheapestNode(): vec {
     // set them to -1, to check it better
     let cheapestNode: vec = { x: -1, y: -1 };
@@ -156,6 +158,11 @@ class AStars {
     return cheapestNode;
   }
 
+  /**
+   * Search the goal in the neibhour nodes of a node
+   * and update the values of the other fields.
+   * Returns true if the goal node was found.
+   */
   private exploreNeighbourNodes(coords: vec): boolean {
     this.updateNode(coords, (n) => {
       n.state = state.traversed; // current node is now traversed
@@ -193,6 +200,8 @@ class AStars {
       // current node
       let node: node = this.getNode(nodeCoords);
 
+      if (node.value === value.wall || node.value === value.start) continue;
+
       // g cost of current main node
       const currentGCost: number =
         this.getRelativGCost(nodeCoords, coords) + this.getNode(coords).gCost;
@@ -219,7 +228,7 @@ class AStars {
         });
         // TODO, what if an other neighbour is better
         return true;
-      } else if (node.value !== value.wall && node.value !== value.start) {
+      } else {
         // TODO
         // node is valid to explore
         if (currentGCost < node.gCost)
@@ -239,6 +248,7 @@ class AStars {
   private retracePath(): vec[] {
     const pathNodes: vec[] = [];
 
+    // start at the goal node and retrace its connected nodes
     let lastNode: node = this.getNode(this._goalCoords);
     while (true) {
       // no nodes was connected to the lastNode => no full(!) path exists
@@ -254,15 +264,6 @@ class AStars {
   public getNode(coords: vec): node {
     const index: number = coords.y * this._xLength + coords.x;
 
-    // check if it is a wall
-    if (this._wallCoords.some((c) => c.x === coords.x && c.y === coords.y))
-      return {
-        value: value.wall,
-        state: state.unexplored,
-        cameFrom: { x: -1, y: -1 },
-        gCost: -1
-      };
-
     if (index >= this._xLength * this._yLength || coords.x < 0 || coords.y < 0)
       // out of array, invalid node
       return {
@@ -270,6 +271,15 @@ class AStars {
         state: state.unexplored,
         gCost: -1,
         cameFrom: { x: -1, y: -1 }
+      };
+
+    // check if it is a wall
+    if (this._wallCoords.some((c) => c.x === coords.x && c.y === coords.y))
+      return {
+        value: value.wall,
+        state: state.unexplored,
+        cameFrom: { x: -1, y: -1 },
+        gCost: -1
       };
 
     // get node data
@@ -286,6 +296,15 @@ class AStars {
   }
 
   private setNode(coords: vec, value: node): void {
+    if (
+      coords.x < 0 ||
+      coords.y < 0 ||
+      coords.x >= this._xLength ||
+      coords.y >= this._yLength
+    )
+      // out of array, invalid node
+      return;
+
     this.nodes[coords.y * this._xLength + coords.x] = value;
   }
 
@@ -307,7 +326,7 @@ class AStars {
       );
   }
 
-  // heuristic cost
+  // heuristic cost TODO
   private getHCost(coords1: vec, coords2: vec): number {
     let ans: number = 0;
 
@@ -326,8 +345,7 @@ class AStars {
     };
 
     return Math.sqrt(
-      Math.abs(coords1.x - coords2.x) ** 2 +
-        Math.abs(coords1.y - coords2.y) ** 2
+      (coords1.x - coords2.x) ** 2 + (coords1.y - coords2.y) ** 2
     );
 
     // TODO bring it to work
@@ -384,8 +402,7 @@ class AStars {
   private getRelativGCost(coords1: vec, coords2: vec): number {
     // uses the same math formular to calculate it
     return Math.sqrt(
-      Math.abs(coords1.x - coords2.x) ** 2 +
-        Math.abs(coords1.y - coords2.y) ** 2
+      (coords1.x - coords2.x) ** 2 + (coords1.y - coords2.y) ** 2
     );
   }
 
@@ -409,9 +426,6 @@ class AStars {
     let x: number = 0;
     let y: number = 0;
     for (let _node of this.nodes) {
-      // color
-      let color: string = '#ffffff';
-
       // handle wall coords correctly
       if (this._wallCoords.some((c) => c.x === x && c.y === y))
         _node = {
@@ -420,6 +434,9 @@ class AStars {
           cameFrom: { x: -1, y: -1 },
           gCost: -1
         };
+
+      // #region color
+      let color: string = '#ffffff';
 
       if (_node !== -1) {
         switch (_node.value) {
@@ -459,6 +476,8 @@ class AStars {
       }
 
       pixelInfo[y][x][0] = color;
+      // #endregion
+
       // set wall values to -1 and calculate it for the others
       if (_node === -1 || _node.value === value.wall) pixelInfo[y][x][1] = '-';
       else
@@ -480,11 +499,11 @@ class AStars {
   }
 }
 
-const _aStar = new AStars(10, 10, { x: 0, y: 0 }, { x: 9, y: 9 }, [
-  { x: 1, y: 1 },
-  { x: 0, y: 1 }
+const pathFinding = new AStars(10, 10, { x: 0, y: 0 }, { x: 9, y: 9 }, [
+  { x: 8, y: 8 }
 ]);
-const _path = _aStar.pathfinding();
+
+const _path = pathFinding.pathfinding();
 
 console.log(_path);
-console.log(_aStar.getNodesData(_path));
+console.log(pathFinding.getNodesData(_path));
