@@ -1,410 +1,418 @@
-/**
- * NxM field with:
- *  - 1x start field (s)
- *  - 1x end field (e)
- *  - Ax wall fields (w)
- *  - Bx transparent wall fields (sw)
- *
- * Goal: find shortest way from start field (s) to end field (e),
- * without crashing into walls.
- * Start field can be inside a transparent wall.
- *
- * Every field gets a G and a H cost, which combined is called F cost.
- * G cost: cost from starting field to current field
- * H cost: cost from current field to end field (heuristic, only an approximation)
- * F cost: G cost + H cost
- *
- * The algorithm starts with a field/node and calculates
- * for all traversable fields (e and n fields) around it their G and H cost.
- * The costs and the field from which we started get saved to
- * each field individualy. If the total cost of a field
- * was already saved with different values before,
- * it will overwrite it if the new F cost is smaller than the old F cost.
- * This field gets marked as explored/traversed.
- *
- * It gets the non explored node with the lowest F cost and combines it with the previous node
- * in a new graph. If the field was already combined with a node,
- * it will combine it if and only if it is more cost efficient.
- */
-interface Vector2d {
+// TODO: walls get initialized in the array, while it could be just done in getNode() to save performance
+// TODO2: better heuristic hCost
+
+// #region enums
+enum value {
+  empty = -1,
+  normal = 0,
+  start = 1,
+  goal = 2,
+  wall = 3
+}
+
+enum state {
+  unexplored = 0,
+  explored = 1,
+  traversed = 2
+}
+// #endregion
+
+// #region interfaces
+interface vec {
   x: number;
   y: number;
 }
 
-// Number.POSITIVE_INFINITY alias
-// TODO remove
-const infinity: number = 9999999999;
+interface node {
+  value: value;
+  state: state;
+  cameFrom: vec;
+  gCost: number;
+}
+// #endregion
 
-namespace AStar {
-  interface Field {
-    coords: Vector2d; // const: coordinates of the field
-    connectedCoords: Vector2d; // var: origin of the gCost field
-    type: fieldType; // const: field type
-    state: fieldState; // var: current explored state
-    hCost: number; // const: heuristic cost from here to end
-    gCost: number; // var: current cost from here to start
-  }
-
+class AStars {
   // #region vars
-  // field types
-  const n: number = 0; // nothing
-  const s: number = 1; // starting field
-  const e: number = 2; // end field
-  const w: number = 3; // wall field
-  const sw: number = 4; // small wall field (walls where you shouldn't be, but can start of)
-  const p: number = 5; // path (for the end)
+  private _xLength: number;
+  private _yLength: number;
 
-  // the type of field
-  enum fieldType {
-    nothing = n,
-    startField = s,
-    endField = e,
-    wallField = w,
-    smallWallField = sw,
-    path = p
-  }
+  private _startCoords: vec;
+  private _goalCoords: vec;
+  private _wallCoords: vec[];
 
-  // was the field already scanned
-  enum fieldState {
-    nothing = 0, // didn't explore or traversed field => gCost unkown
-    explored = 1, // gCost was calculated once, not sure that it is the best one
-    traversed = 2 // was already explored and once the cheapest field
-  }
+  public nodes: (node | -1)[];
 
-  const fieldXLength: number = 20;
-  const fieldYLength: number = 15;
-
-  export const startField: Vector2d = { x: 0, y: 0 };
-  export const endField: Vector2d = { x: 15, y: 8 };
-
-  // initialise the field with these walls with these settings
-  export const wallFields: Vector2d[][] = [
-    [
-      { x: 10, y: 6 },
-      { x: w, y: -1 }
-    ],
-    [
-      { x: 11, y: 5 },
-      { x: w, y: -1 }
-    ],
-    [
-      { x: 12, y: 4 },
-      { x: w, y: -1 }
-    ]
-    /*
-    [
-      { x: 0, y: 0 }, // coord 1
-      { x: w, y: -1 }
-    ],
-    [
-      { x: 15, y: 8 }, // coord 2
-      { x: w, y: -1 }
-    ],
-    [
-      { x: 4, y: 3 }, // start wall
-      { x: w, y: -1 }
-    ],
-    [
-      { x: 5, y: 8 }, // end wall
-      { x: w, y: -1 }
-    ],
-    [
-      { x: 4, y: 8 }, // end wall
-      { x: w, y: -1 }
-    ],
-    [
-      { x: 5, y: 6 }, // end wall
-      { x: w, y: -1 }
-    ],
-    [
-      { x: 4, y: 7 }, // end wall
-      { x: w, y: -1 }
-    ],
-    [
-      { x: 6, y: 7 }, // end wall
-      { x: w, y: -1 }
-    ],
-    [
-      { x: 6, y: 8 }, // end wall
-      { x: w, y: -1 }
-    ],
-
-    [
-      { x: 6, y: 6 }, // end wall
-      { x: w, y: -1 }
-    ]
-    //[
-    //  { x: 4, y: 6 }, // end wall
-    //  { x: w, y: -1 }
-    //]*/
-  ];
-
-  export const fields: Field[][] = initialiseFields();
-  function initialiseFields(): Field[][] {
-    let _fields: Field[][] = [];
-    for (let y = 0; y < fieldYLength; ++y) {
-      _fields.push([]);
-      for (let x = 0; x < fieldXLength; ++x) {
-        let value = n;
-        // special fields, specified in field settings
-        for (let i = 0; i < wallFields.length; ++i)
-          if (wallFields[i][0].x === x && wallFields[i][0].y === y)
-            value = wallFields[i][1].x;
-
-        if (x === startField.x && y === startField.y)
-          value = fieldType.startField;
-        if (x === endField.x && y === endField.y) value = fieldType.endField;
-
-        _fields[y].push({
-          coords: { x: x, y: y },
-          type: value,
-          // TODO round
-          hCost: infinity,
-          gCost: value === fieldType.startField ? 0 : infinity,
-          connectedCoords: { x: -1, y: -1 },
-          state: value === fieldType.startField ? 1 : 0 // set the start field to traversed
-        });
-      }
-    }
-    return _fields;
-  }
+  private sqrt2: number;
   // #endregion
 
-  export function pathfinding(): Vector2d[] {
-    let searchDepthCounter: number = 1500;
-    let foundEnd: boolean = false;
-    // the results in between
-    let middleTimeResults: { state1Fields: Field[]; state2Fields: Field[] }[] =
-      [];
+  constructor(
+    xLength: number,
+    yLength: number,
+    startCoords: vec,
+    goalCoords: vec,
+    wallCoords: vec[]
+  ) {
+    this.sqrt2 = Math.sqrt(2);
 
-    // the main code
-    while (true) {
-      // get the current cheapest field
-      let currentCheapestField: Vector2d = currentCheapestExploredField();
+    // set lengths
+    this._xLength = xLength;
+    this._yLength = yLength;
 
-      // avoid restarting from the begining if every field was checked
-      if (currentCheapestField.x === -1 && currentCheapestField.y === -1) break;
-
-      if (exploreNeighbourFields(currentCheapestField) === true)
-        // explore the neighbour fields and search for end
-        foundEnd = true;
-
-      middleTimeResults.push({
-        state1Fields: getFields((f) => f.state === 1),
-        state2Fields: getFields((f) => f.state === 2)
-      });
-
-      if (--searchDepthCounter === 0 || foundEnd) break;
-    }
-
-    if (foundEnd) return findPath().map((f) => f.coords);
-    else return [];
-
-    // #region private functions
-    // returns the current cheapest field with an explored state bigger than 0 (was at least once traversed)
-    function currentCheapestExploredField(): Vector2d {
-      let cheapestField: Vector2d = { x: -1, y: -1 }; // the current cheapest field, starts everytime with the start field
-      let cheapestFCost: number = infinity;
-
-      // only get fields with status 1
-      const traversedFields: Field[] = getFields((f) => f.state === 1);
-
-      // if the traversed field is cheaper, update it
-      // TODO <= vs <
-      for (const tvField of traversedFields) {
-        fields[tvField.coords.y][tvField.coords.x].hCost = calculateHCost(
-          tvField.coords
-        );
-        if (tvField.gCost + tvField.hCost <= cheapestFCost) {
-          cheapestFCost = tvField.gCost + tvField.hCost;
-          cheapestField = tvField.coords;
-        }
-      }
-
-      return cheapestField;
-    }
-
-    function exploreNeighbourFields(coords: Vector2d): boolean {
-      // update current field state to traversed
-      fields[coords.y][coords.x].state = 2;
-
-      // set all its neighbour fields to explored instead of current value
-      // TODO what if was already traversed
-      const neighbourFields: Vector2d[] = [
-        { x: 1, y: 0 },
-        { x: -1, y: 0 },
-        { x: 0, y: 1 },
-        { x: 0, y: -1 },
-        { x: 1, y: 1 },
-        { x: 1, y: -1 },
-        { x: -1, y: 1 },
-        { x: -1, y: -1 }
-      ];
-
-      for (const neighbour of neighbourFields) {
-        const _y: number = neighbour.y + coords.y;
-        const _x: number = neighbour.x + coords.x;
-        // check boundes
-        if (_y < 0 || _x < 0 || _y >= fieldYLength || _x >= fieldXLength)
-          continue;
-        const currField: Field = fields[_y][_x];
-
-        switch (currField.type) {
-          case s:
-          case w:
-            // start or wall
-            break;
-          case sw:
-            // small wall
-            break;
-          case n:
-          case e:
-            // normal or end
-            // update field
-            const curGCost: number = calculateGCost(coords, currField.coords);
-            if (currField.state === 0) {
-              fields[_y][_x].gCost = curGCost;
-              fields[_y][_x].connectedCoords = coords;
-              fields[_y][_x].state = 1;
-            } else {
-              // if new gCost is below old gCost, update field
-              if (curGCost <= currField.gCost) {
-                fields[_y][_x].gCost = curGCost;
-                fields[_y][_x].connectedCoords = coords;
-                fields[_y][_x].state = 1;
-              }
-            }
-            if (currField.type === e) {
-              fields[_y][_x].state = 2;
-              return true;
-            }
-            break;
-        }
-      }
-
-      return false;
-    }
-
-    function findPath(): Field[] {
-      // check for not found path
-      if (fields[endField.y][endField.x].coords.x === -1) return [];
-
-      let path: Field[] = [];
-      let lastCoords: Vector2d = endField;
-
-      // if arived at the start field (where x is -1) break
-      while (lastCoords.x !== -1) {
-        // add current field to path
-        path.push(fields[lastCoords.y][lastCoords.x]);
-        // redirect it to the origin coords
-        lastCoords = fields[lastCoords.y][lastCoords.x].connectedCoords;
-      }
-
-      return path;
-    }
-
-    function calculateGCost(
-      originCoords: Vector2d,
-      gotoCoords: Vector2d
-    ): number {
-      const oldCost: number = fields[originCoords.y][originCoords.x].gCost;
-      const newCost: number = Math.sqrt(
-        Math.abs(originCoords.y - gotoCoords.y) ** 2 +
-          Math.abs(originCoords.x - gotoCoords.x) ** 2
-      );
-      return oldCost + newCost;
-
-      // TODO round
-      return (
-        fields[originCoords.y][originCoords.x].gCost +
-        (originCoords.y === gotoCoords.y || originCoords.x === gotoCoords.x
-          ? 1
-          : 1.4)
-      );
-    }
-
-    function calculateHCost(coords: Vector2d): number {
-      return Math.sqrt(
-        Math.abs(endField.x - coords.x) ** 2 +
-          Math.abs(endField.y - coords.y) ** 2
-      );
-    }
-    // #endregion
+    this.initializeValues(startCoords, goalCoords, wallCoords);
   }
 
-  export function draw(
-    _fields: { type: fieldType }[][] = fields,
-    xLength: number = fieldXLength,
-    yLength: number = fieldYLength
-  ): string {
-    let fieldString: string = 'x: ';
-    // header
-    for (let i = 0; i < xLength; ++i) fieldString += i % 10;
-    fieldString += '\n';
+  /**
+   * Resets the Node array, and sets new Coords.
+   */
+  public initializeValues(
+    startCoords: vec,
+    goalCoords: vec,
+    wallCoords: vec[]
+  ): void {
+    // set coords in object
+    this._startCoords = startCoords;
+    this._goalCoords = goalCoords;
+    this._wallCoords = wallCoords;
 
-    for (let y = 0; y < yLength; ++y) {
-      // row beginning
-      fieldString += (y % 10) + ': ';
+    // set all the nodes to -1/null
+    this.nodes = [];
+    for (let i = 0; i < this._xLength * this._yLength; ++i) this.nodes.push(-1);
 
-      // actuall field value
-      for (let x = 0; x < xLength; ++x) fieldString += _fields[y][x].type;
-
-      fieldString += '\n';
-    }
-
-    return fieldString;
-  }
-
-  // TODO
-  export function updateFields(finalPath: Vector2d[]) {
-    AStar.getFields((f) => {
-      if (
-        finalPath.some(
-          (_f) =>
-            _f.x === f.coords.x &&
-            _f.y === f.coords.y &&
-            !(
-              (_f.x === AStar.startField.x && _f.y === AStar.startField.y) ||
-              (_f.x === AStar.endField.x && +_f.y === AStar.endField.y)
-            )
-        )
-      )
-        AStar.fields[f.coords.y][f.coords.x].type = 5; // path fields
-
-      // explored and traversed fields
-      if (
-        !(
-          (f.coords.x === AStar.startField.x &&
-            f.coords.y === AStar.startField.y) ||
-          (f.coords.x === AStar.endField.x && +f.coords.y === AStar.endField.y)
-        )
-      )
-        if (f.state === 1)
-          // explored fields
-          AStar.fields[f.coords.y][f.coords.x].type = 6;
-        else if (f.state === 2) AStar.fields[f.coords.y][f.coords.x].type = 7; // traversed fields
-
-      return false;
+    // set the start and the goal coords
+    this.setNode(startCoords, {
+      value: value.start,
+      state: state.explored,
+      cameFrom: { x: -1, y: -1 },
+      gCost: 0
+    });
+    this.setNode(goalCoords, {
+      value: value.goal,
+      state: state.unexplored,
+      cameFrom: { x: -1, y: -1 },
+      gCost: -1
     });
   }
 
-  export function getFields(filter?: (field: Field) => boolean): Field[] {
-    let fieldArray: Field[] = [];
-    for (let y = 0; y < fieldYLength; ++y)
-      for (let x = 0; x < fieldXLength; ++x)
-        if (filter === undefined || filter(fields[y][x]))
-          fieldArray.push(fields[y][x]);
-    return fieldArray;
+  /**
+   * Returns the path from start to the end field.
+   * If no path found, it returns an empty array.
+   */
+  public pathfinding(): vec[] {
+    let arrivedAtGoal: boolean = false;
+
+    while (true) {
+      // get the cheapest explored node
+      let cheapestNode: vec = this.getCheapestNode();
+      // no more nodes to traverse there
+      if (cheapestNode.x === -1) break;
+
+      // traverse the node and explore it's neighbour nodes
+      arrivedAtGoal = this.exploreNeighbourNodes(cheapestNode);
+
+      // found the goal node, stop
+      if (arrivedAtGoal) break;
+    }
+
+    //if (arrivedAtGoal) console.log('Found the goal!');
+    //else console.log('Did not found the goal!');
+
+    // retrace the whole path and return it
+    return this.retracePath();
   }
 
-  export function toPixelInfo(
-    _fields: Field[],
-    _path: Vector2d[]
-  ): string[][][] {
+  /**
+   * Returns the cheapest node which is in explored state in the node array.
+   */
+  private getCheapestNode(): vec {
+    // set them to -1, to check it better
+    let cheapestNode: vec = { x: -1, y: -1 };
+    let cheapestNodeFCost: number = -1;
+
+    for (let y = 0; y < this._yLength; ++y)
+      for (let x = 0; x < this._xLength; ++x) {
+        // for each node
+        const currentNodeCoords: vec = { x: x, y: y };
+        const currentNode: node = this.getNode(currentNodeCoords);
+
+        // if node is empty, was not explored or is a wall, skip
+        if (
+          currentNode.value === value.empty ||
+          currentNode.value === value.wall ||
+          currentNode.state !== state.explored
+        )
+          continue;
+
+        // calculate the current F cost
+        const currentNodeFCost: number =
+          currentNode.gCost +
+          this.getHCost(currentNodeCoords, this._goalCoords);
+
+        // if cheapest node is null, update it
+        // if current node is cheaper in total (F cost) update it
+        if (cheapestNode.x === -1 || currentNodeFCost < cheapestNodeFCost) {
+          cheapestNodeFCost = currentNodeFCost;
+          cheapestNode = currentNodeCoords;
+        }
+      }
+
+    return cheapestNode;
+  }
+
+  /**
+   * Search the goal in the neibhour nodes of a node
+   * and update the values of the other fields.
+   * Returns true if the goal node was found.
+   */
+  private exploreNeighbourNodes(coords: vec): boolean {
+    this.updateNode(coords, (n) => {
+      n.state = state.traversed; // current node is now traversed
+      return n;
+    });
+
+    // constant relativ positions of neighbour nodes
+    const neighbourNodes: vec[] = [
+      { x: 1, y: 0 },
+      { x: -1, y: 0 },
+      { x: 0, y: 1 },
+      { x: 0, y: -1 },
+      { x: 1, y: 1 },
+      { x: 1, y: -1 },
+      { x: -1, y: 1 },
+      { x: -1, y: -1 }
+    ];
+
+    for (const neighbour of neighbourNodes) {
+      // current coords
+      const nodeCoords: vec = {
+        x: neighbour.x + coords.x,
+        y: neighbour.y + coords.y
+      };
+
+      // check boundes
+      if (
+        nodeCoords.x < 0 ||
+        nodeCoords.y < 0 ||
+        nodeCoords.x >= this._xLength ||
+        nodeCoords.y >= this._yLength
+      )
+        continue;
+
+      // current node
+      let node: node = this.getNode(nodeCoords);
+
+      if (node.value === value.wall || node.value === value.start) continue;
+
+      // g cost of current main node
+      const currentGCost: number =
+        this.getRelativGCost(nodeCoords, coords) + this.getNode(coords).gCost;
+
+      // if node was not set already, set the data
+      if (node.value === value.empty) {
+        this.setNode(nodeCoords, {
+          value: value.normal,
+          state: state.explored,
+          cameFrom: coords,
+          gCost: currentGCost
+        });
+        // update the node for this function
+        node = this.getNode(nodeCoords);
+      }
+
+      // node is the goal, finished
+      if (node.value === value.goal) {
+        this.updateNode(nodeCoords, (n) => {
+          n.state = state.explored;
+          n.cameFrom = coords;
+          n.gCost = currentGCost;
+          return n;
+        });
+        // TODO, what if an other neighbour is better
+        return true;
+      } else {
+        // TODO
+        // node is valid to explore
+        if (currentGCost < node.gCost)
+          this.updateNode(nodeCoords, (n) => {
+            n.state = state.explored;
+            n.cameFrom = coords;
+            n.gCost = currentGCost;
+            return n;
+          });
+      }
+    }
+
+    // didn't found the goal
+    return false;
+  }
+
+  private retracePath(): vec[] {
+    const pathNodes: vec[] = [];
+
+    // start at the goal node and retrace its connected nodes
+    let lastNode: node = this.getNode(this._goalCoords);
+    while (true) {
+      // no nodes was connected to the lastNode => no full(!) path exists
+      if (lastNode.value === value.empty) return [];
+      if (lastNode.value === value.start) break; // stop at the starting node
+      pathNodes.push(lastNode.cameFrom); // add current node to path
+      lastNode = this.getNode(lastNode.cameFrom); // set the next node to the linked one
+    }
+
+    return pathNodes;
+  }
+
+  public getNode(coords: vec): node {
+    const index: number = coords.y * this._xLength + coords.x;
+
+    if (index >= this._xLength * this._yLength || coords.x < 0 || coords.y < 0)
+      // out of array, invalid node
+      return {
+        value: value.empty, // maybe value.invalid
+        state: state.unexplored,
+        gCost: -1,
+        cameFrom: { x: -1, y: -1 }
+      };
+
+    // check if it is a wall
+    if (this._wallCoords.some((c) => c.x === coords.x && c.y === coords.y))
+      return {
+        value: value.wall,
+        state: state.unexplored,
+        cameFrom: { x: -1, y: -1 },
+        gCost: -1
+      };
+
+    // get node data
+    const node: node | -1 = this.nodes[index];
+    // TODO, if null return a default value
+    if (node === -1)
+      return {
+        value: value.empty,
+        state: state.unexplored,
+        gCost: 0, // TODO why not -1
+        cameFrom: { x: -1, y: -1 }
+      };
+    else return node;
+  }
+
+  private setNode(coords: vec, value: node): void {
+    if (
+      coords.x < 0 ||
+      coords.y < 0 ||
+      coords.x >= this._xLength ||
+      coords.y >= this._yLength
+    )
+      // out of array, invalid node
+      return;
+
+    this.nodes[coords.y * this._xLength + coords.x] = value;
+  }
+
+  private updateNode(coords: vec, updateValue: (n: node) => node): void {
+    const currentNode: node = this.getNode(coords);
+
+    // update the coords, or set a default value
+    if (currentNode.value !== value.empty)
+      this.setNode(coords, updateValue(currentNode));
+    else
+      this.setNode(
+        coords,
+        updateValue({
+          value: value.normal,
+          state: state.unexplored,
+          gCost: 0,
+          cameFrom: { x: -1, y: -1 }
+        })
+      );
+  }
+
+  // heuristic cost TODO
+  private getHCost(coords1: vec, coords2: vec): number {
+    let ans: number = 0;
+
+    enum _direction {
+      straight,
+      north_east,
+      east_south,
+      south_west,
+      west_north
+    }
+    const directionMatrix: object = {
+      '1': [1, -1],
+      '2': [1, 1],
+      '3': [-1, 1],
+      '4': [-1, -1]
+    };
+
+    return Math.sqrt(
+      (coords1.x - coords2.x) ** 2 + (coords1.y - coords2.y) ** 2
+    );
+
+    // TODO bring it to work
+
+    while (true) {
+      if (coords1.x === coords2.x && coords1.y === coords2.y) return ans;
+
+      // get the direction from coords2 in relation to coords1
+      let direction: _direction = getDirection(coords1, coords2);
+
+      if (direction === _direction.straight) {
+        console.log(coords1, coords2, this.sqrt2);
+        if (coords1.x === coords2.x)
+          return ans + Math.abs(coords1.y - coords2.y);
+        else return ans + Math.abs(coords1.x - coords2.x);
+      }
+
+      // TODO test if it works
+      ans += this.sqrt2;
+      switch (direction) {
+        case _direction.north_east:
+          coords1.x = coords1.x + directionMatrix['1'][0];
+          coords1.y = coords1.y + directionMatrix['1'][1];
+          break;
+        case _direction.east_south:
+          coords1.x = coords1.x + directionMatrix['2'][0];
+          coords1.y = coords1.y + directionMatrix['2'][1];
+          break;
+        case _direction.south_west:
+          coords1.x = coords1.x + directionMatrix['3'][0];
+          coords1.y = coords1.y + directionMatrix['3'][1];
+          break;
+        case _direction.west_north:
+          coords1.x = coords1.x + directionMatrix['4'][0];
+          coords1.y = coords1.y + directionMatrix['4'][1];
+          break;
+      }
+    }
+
+    function getDirection(_coords1: vec, _coords2: vec): _direction {
+      if (_coords1.x === _coords2.x || _coords1.y === _coords2.y)
+        return _direction.straight;
+      else if (_coords1.x < _coords2.x && _coords1.y > _coords2.y)
+        return _direction.north_east;
+      else if (_coords1.x < _coords2.x && _coords1.y < _coords2.y)
+        return _direction.east_south;
+      else if (_coords1.x > _coords2.x && _coords1.y > _coords2.x)
+        return _direction.west_north;
+      else return _direction.south_west;
+    }
+  }
+
+  // way cost, only for neighbour nodes
+  private getRelativGCost(coords1: vec, coords2: vec): number {
+    // uses the same math formular to calculate it
+    return Math.sqrt(
+      (coords1.x - coords2.x) ** 2 + (coords1.y - coords2.y) ** 2
+    );
+  }
+
+  public getNodesData(path: vec[]): string[][][] {
     let pixelInfo: string[][][] = [];
-    for (let y = 0; y < fieldYLength; ++y) {
+
+    // initialise the nodes field first
+    for (let y = 0; y < this._yLength; ++y) {
       pixelInfo.push([]); // y dimension
-      for (let x = 0; x < fieldXLength; ++x) {
+      for (let x = 0; x < this._xLength; ++x) {
         // x dimension
         pixelInfo[y].push([]);
 
@@ -415,98 +423,87 @@ namespace AStar {
       }
     }
 
-    for (const _f of _fields) {
-      // color
+    let x: number = 0;
+    let y: number = 0;
+    for (let _node of this.nodes) {
+      // handle wall coords correctly
+      if (this._wallCoords.some((c) => c.x === x && c.y === y))
+        _node = {
+          value: value.wall,
+          state: state.unexplored,
+          cameFrom: { x: -1, y: -1 },
+          gCost: -1
+        };
+
+      // #region color
       let color: string = '#ffffff';
-      switch (_f.type) {
-        case n:
-          color = '#ffffff';
-          break;
-        case s:
-          color = '#0000ff';
-          break;
-        case e:
-          color = '#ff0000';
-          break;
-        case w:
-          color = '#808080';
-          break;
-        case p:
-          color = '#00ff00';
-          break;
-        case 6:
+
+      if (_node !== -1) {
+        switch (_node.value) {
+          case value.empty:
+            color = '#ffffff';
+            break;
+          case value.start:
+            color = '#00ff00';
+            break;
+          case value.goal:
+            color = '#ff0000';
+            break;
+          case value.wall:
+            color = '#808080';
+            break;
+        }
+
+        if (
+          _node.state === state.explored &&
+          _node.value !== value.start &&
+          _node.value !== value.goal
+        )
+          // explored fields
           color = '#ffff00';
-          break;
-        case 7:
-          if (!_path.some((i) => i.x === _f.coords.x && i.y === _f.coords.y))
-            color = '#00ffff';
-          else color = '#00ff00';
-          break;
+        else if (
+          _node.state === state.traversed &&
+          _node.value !== value.start &&
+          _node.value !== value.goal
+        )
+          color = '#00ffff'; // traversed fields
+
+        if (
+          path.some((v) => v.x === x && v.y === y) &&
+          !(x === this._startCoords.x && y === this._startCoords.y)
+        )
+          color = '#ff00ff'; // path fields, which are not the start
       }
 
-      pixelInfo[_f.coords.y][_f.coords.x][0] = color;
+      pixelInfo[y][x][0] = color;
+      // #endregion
 
-      pixelInfo[_f.coords.y][_f.coords.x][1] =
-        _f.hCost !== infinity
-          ? (Math.round(_f.hCost * 10) / 10).toString()
-          : '-';
+      // set wall values to -1 and calculate it for the others
+      if (_node === -1 || _node.value === value.wall) pixelInfo[y][x][1] = '-';
+      else
+        pixelInfo[y][x][1] = this.getHCost({ x: x, y: y }, this._goalCoords)
+          .toPrecision(3)
+          .toString();
 
-      pixelInfo[_f.coords.y][_f.coords.x][2] =
-        _f.gCost !== infinity
-          ? (Math.round(_f.gCost * 10) / 10).toString()
-          : '-';
+      if (_node === -1 || _node.value === value.wall) pixelInfo[y][x][2] = '-';
+      else pixelInfo[y][x][2] = _node.gCost.toPrecision(3).toString();
+
+      // increase counter
+      if (++x >= this._xLength) {
+        x = 0;
+        ++y;
+      }
     }
 
     return pixelInfo;
   }
 }
 
-namespace LegoRoboter {
-  // motors.getAllMotorData()[0].actualSpeed: number
-  // motors.getAllMotorData()[0].count: number
-  // motors.getAllMotorData()[0].tachoCount: number
+const pathFinding = new AStars(10, 10, { x: 0, y: 0 }, { x: 9, y: 9 }, [
+  { x: 8, y: 8 }
+]);
 
-  // Motor.angle(): number
-  // Motor.speed(): number
-  // Motor.isReady(): boolean
+const _path = pathFinding.pathfinding();
 
-  // Motor.stop(): void
-  // Motor.reset(): void
-  // Motor.clearCounts(): void
-  // Motor.markUsed(): void
-
-  // Motor.setBrake(brake: boolean): void
-  // Motor.setBrakeSettleTime(millis: number): void
-
-  // Motor.pauseUntilReady(timeOut ?: number): void
-  // Motor.pauseUntilStalled(timeOut?: number): void
-
-  // Motor.setPauseOnRun(value: boolean): void
-
-  // Motor.setRunPhase(phase: MovePhase, value: number, unit: MoveUnit = MoveUnit.MilliSeconds): void
-
-  // Motor.run(speed: number, value: number = 0, unit: MoveUnit = MoveUnit.MilliSeconds): void
-  // Motor.ramp(speed: number, value: number = 500, unit: MoveUnit = MoveUnit.MilliSeconds, acceleration?: number, deceleration?: number): void
-
-  // SynchedMotorPair.steer(turnRatio: number, speed: number, value: number = 0, unit: MoveUnit = MoveUnit.MilliSeconds): void
-  // SynchedMotorPair.tank(speedLeft: number, speedRight: number, value: number = 0, unit: MoveUnit = MoveUnit.MilliSeconds): void
-
-  interface position {
-    coordinates: Vector2d;
-    angle: number;
-  }
-  interface movement {
-    motor1Speed: number;
-    motor1Time: number;
-    motor2Speed: number;
-    motor2Time: number;
-  }
-}
-
-const path: Vector2d[] = AStar.pathfinding();
-AStar.updateFields(path);
-
-console.log(path.length);
-//console.log(AStar.getFields());
-//console.log(AStar.draw(AStar.fields));
-console.log(AStar.toPixelInfo(AStar.getFields(), path.slice(1, -1)));
+console.log(_path);
+console.log(pathFinding.getNodesData(_path));

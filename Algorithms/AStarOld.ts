@@ -20,15 +20,15 @@ const costPerMove: number = 1;
 // the main field
 let field: number[][] = createArray(fieldXLength, fieldYLength, 0);
 // initiale field settings
-field[7][5] = s; // start
+field[0][0] = s; // start
 //field[4][2] = e; // end
-field[7][4] = e; // end TODO cost calculation
-field[3][2] = w; // wall/obsticle
-field[3][3] = w; // wall/obsticle
-field[4][3] = w; // wall/obsticle
-field[5][3] = w; // wall/obsticle
-field[6][3] = w; // wall/obsticle
-field[7][3] = w; // wall/obsticle
+field[9][9] = e; // end TODO cost calculation
+field[8][8] = w; // wall/obsticle
+//field[3][3] = w; // wall/obsticle
+//field[4][3] = w; // wall/obsticle
+//field[5][3] = w; // wall/obsticle
+//field[6][3] = w; // wall/obsticle
+//field[7][3] = w; // wall/obsticle
 
 // explored cost from start field to the current lowest cost way
 let gCost: (number | null)[][] = createArray(fieldXLength, fieldYLength, null);
