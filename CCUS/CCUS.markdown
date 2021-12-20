@@ -4,7 +4,7 @@
 
 The language is designed to be able to program anything desiert with low effort in mind.
 
-The language is heavily inspired by the programming languages: TypeScript, C/C++ and C# from their syntax and structures.
+The language is heavily inspired by the programming languages: [TypeScript](https://www.typescriptlang.org), [C/C++](https://gcc.gnu.org/) and [C#](https://docs.microsoft.com/de-de/dotnet/csharp/) from their syntax and structures.
 
 Example Code for a function `f(x) = 2x`:
 
