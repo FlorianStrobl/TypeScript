@@ -53,5 +53,7 @@ int main()
 {
   char str[] = "-abCd;::gfgfL";
 
-  std::cout << Strings::ToUpper(str, 6, 2);
+  std::cout << Strings::ToUpper(str, 6, 2) << std::endl;
+
+  printf("%i", ((bool)1) == 1);
 }
