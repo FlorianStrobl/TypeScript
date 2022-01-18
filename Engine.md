@@ -2,7 +2,7 @@
 
 You are in space. Endeless blackness everywhere you look. Suddenly a table apears in front of you. It has a candle on it. Light gets emited by the fire of the candle.
 
-Why can you see the table? Because the light from the candle bounces off the surface of the table and some of it goes straight into your eye. Light of different wavelengths hits your retina but only the ones with 570nm, 540nm and 430nm wavelengths are recognised by the different cone cells and are processed by your brain as red, green and blue colors respectifly. Furthermore, the luminance of the light changes the way we percive brightness. That means the amount of particels which hit our eye.
+Why can you see the table? Because the light from the candle bounces off the surface of the table and some of it goes straight into your eye. Light of different wavelengths hits your retina but only the ones with 570nm, 540nm and 430nm wavelengths are recognised by the different cone cells and are processed by your brain as red, green and blue respectifly. Furthermore, the luminance of the light changes the way we percive brightness. That means the amount of particels which hit our eye.
 
 [Image of a table with a lightend candle]
 
