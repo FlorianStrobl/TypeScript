@@ -25,7 +25,7 @@ const timeUnitValues: { [index: string]: number } = {
   y: 1000 * 60 * 60 * 24 * 365,
   a: 1000 * 60 * 60 * 24 * 365.25,
   dec: 1000 * 60 * 60 * 24 * 365 * 10,
-  cen: 1000 * 60 * 60 * 24 * 365 * 100,
+  cen: 1000 * 60 * 60 * 24 * 365 * 100
 };
 
 const fullTimeUnitNames: {
@@ -42,7 +42,7 @@ const fullTimeUnitNames: {
   mth: { short: 'mth', medium: 'mo', long: 'month' },
   y: { short: 'y', medium: 'yr', long: 'year' },
   dec: { short: 'dec', medium: 'dec', long: 'decade' },
-  cen: { short: 'cen', medium: 'cent', long: 'century' },
+  cen: { short: 'cen', medium: 'cent', long: 'century' }
 };
 
 export function msToTimeString(
