@@ -1,6 +1,7 @@
 // no null/undefined cause it wont be recognised correctly by the lego robo
 // ball, ball cage, laundry, laundry room, water, water table, markerBlock
 // TODO obstacle positions
+// http://ai.stanford.edu/~ddolgov/papers/dolgov_gpp_stair08.pdf
 
 // #region types
 type num = number;
@@ -17,7 +18,14 @@ interface laundryRoom {
   finished: information; // finished=laundry in the laundry room
 }
 
-interface pathIntructions {}
+// TODO, after a drive instruction, it will be off by some
+// because the motors arent perfect
+// the travel distance will be a bit higher so it has to account for that
+// motions
+interface pathIntructions {
+  wheelRotation: num;
+  travelDistance: num;
+}
 // #endregion
 
 // #region enums
@@ -49,6 +57,127 @@ const enum information {
 // #endregion
 
 // #region classes
+// singleton, data and code for the robo
+class Robo {
+  private position: vec2;
+  private rotation: num;
+
+  private armData: num; // TODO
+
+  private toTravelPath: pathIntructions[];
+
+  private numberOfWaterLoaded: num;
+
+  private finishedRoomsIds: roomId[]; // solved rooms
+  // should be in gameField, but would be to much unnecessary code
+  private roomsInstances: Room[]; // room i is at index i
+
+  private gameField: GameField;
+
+  private pathfinding: Pathfinding;
+
+  constructor() {
+    this.position = { x: 0, y: 0 };
+    this.rotation = 0; // orientation
+
+    this.toTravelPath = [];
+
+    this.numberOfWaterLoaded = 0;
+
+    this.finishedRoomsIds = [];
+    this.roomsInstances = [new Room(0), new Room(1), new Room(2), new Room(3)];
+
+    this.gameField = new GameField();
+
+    this.pathfinding = new Pathfinding();
+    this.pathfinding.setPos(this.position, this.rotation);
+  }
+
+  // the running function
+  public main(): void {
+    this.loadWater();
+    this.solveRoom(0);
+    // go to laundry room if necessary
+    this.solveRoom(1);
+    // go to laundry room if necessary
+    this.solveRoom(2);
+    // go to laundry room if necessary
+    this.solveRoom(3);
+    // go to laundry room if necessary
+  }
+
+  private solveRoom(roomId: roomId): void {
+    // this.roomsInstances[roomId]
+
+    /** TODO
+     * possible tasks per room:
+     * - water + laundry
+     * - water
+     * - ball + laundry
+     * - ball
+     *
+     * 75% of rooms have laundry
+     * 50% of rooms have water the other 50% ball
+     */
+
+    if (this.roomsInstances[roomId].wasVisited() === true) {
+      // no room data given
+      // #region marker block and ball/water task
+      const markerBlockColor: color = getMarkerColor();
+
+      this.roomsInstances[roomId].setMarkerBlockColor(markerBlockColor); // TODO why save?
+
+      if (markerBlockColor === color.green) {
+        // ball
+        // TODO while doing, check laundry for data?
+      } else if (markerBlockColor === color.white) {
+        // water
+      }
+      // #endregion
+
+      const goToLaundryRoom: bool = doLaundryTask();
+      // TODO goToLaundryRoom
+    }
+
+    function getMarkerColor(): color {
+      // TODO
+      return color.none;
+    }
+
+    // returns true if the robo has to go to the laundry
+    function doLaundryTask(): bool {
+      // #region laundry
+      let inf: information = this.roomsInstances[roomId].haveToDoLaundry();
+
+      if (inf === information.false) return false; // finished
+
+      if (inf === information.none) {
+        // check if it has to be done and if so, set haveToDoLaundry to true
+        inf = information.true; // TODO only if it is really true, aka after the check
+      }
+
+      if (inf === information.true) {
+        // do laundry now
+        // TODO goto the laundry room?
+        return true;
+      }
+
+      return false;
+      // #endregion
+    }
+
+    function doWaterTask(): void {}
+
+    function doBallTask(): void {}
+  }
+
+  private loadWater(): void {
+    // TODO
+    // goto water
+    // move arm
+  }
+}
+
 // singleton, data about the field
 class GameField {
   private water1Loaded: information; // the left one, loaded=true: water bottle on the robo
@@ -159,119 +288,6 @@ class Room {
   }
 }
 
-// singleton, data and code for the robo
-class Robo {
-  private position: vec2;
-  private rotation: num;
-
-  private armData: num; // TODO
-
-  private toTravelPath: pathIntructions[];
-
-  private numberOfWaterLoaded: num;
-
-  private finishedRoomsIds: roomId[]; // solved rooms
-  private roomsInstances: Room[]; // room i is at index i
-
-  private pathfinding: Pathfinding;
-
-  constructor() {
-    this.position = { x: 0, y: 0 };
-    this.rotation = 0; // orientation
-
-    this.toTravelPath = [];
-
-    this.numberOfWaterLoaded = 0;
-
-    this.finishedRoomsIds = [];
-    this.roomsInstances = [new Room(0), new Room(1), new Room(2), new Room(3)];
-
-    this.pathfinding = new Pathfinding();
-    this.pathfinding.setPos(this.position, this.rotation);
-
-    this.loadWater();
-    this.solveRoom(0);
-    // go to laundry room if necessary
-    this.solveRoom(1);
-    // go to laundry room if necessary
-    this.solveRoom(2);
-    // go to laundry room if necessary
-    this.solveRoom(3);
-    // go to laundry room if necessary
-  }
-
-  public solveRoom(roomId: roomId): void {
-    // this.roomsInstances[roomId]
-
-    /** TODO
-     * possible tasks per room:
-     * - water + laundry
-     * - water
-     * - ball + laundry
-     * - ball
-     *
-     * 75% of rooms have laundry
-     * 50% of rooms have water the other 50% ball
-     */
-
-    if (this.roomsInstances[roomId].wasVisited() === true) {
-      // no room data given
-      // #region marker block and ball/water task
-      const markerBlockColor: color = getMarkerColor();
-
-      this.roomsInstances[roomId].setMarkerBlockColor(markerBlockColor); // TODO why save?
-
-      if (markerBlockColor === color.green) {
-        // ball
-        // TODO while doing, check laundry for data?
-      } else if (markerBlockColor === color.white) {
-        // water
-      }
-      // #endregion
-
-      const goToLaundryRoom: bool = doLaundryTask();
-      // TODO goToLaundryRoom
-    }
-
-    function getMarkerColor(): color {
-      // TODO
-      return color.none;
-    }
-
-    // returns true if the robo has to go to the laundry
-    function doLaundryTask(): bool {
-      // #region laundry
-      let inf: information = this.roomsInstances[roomId].haveToDoLaundry();
-
-      if (inf === information.false) return false; // finished
-
-      if (inf === information.none) {
-        // check if it has to be done and if so, set haveToDoLaundry to true
-        inf = information.true; // TODO only if it is really true, aka after the check
-      }
-
-      if (inf === information.true) {
-        // do laundry now
-        // TODO goto the laundry room?
-        return true;
-      }
-
-      return false;
-      // #endregion
-    }
-
-    function doWaterTask(): void {}
-
-    function doBallTask(): void {}
-  }
-
-  public loadWater(): void {
-    // TODO
-    // goto water
-    // move arm
-  }
-}
-
 // singleton, code for pathfinding
 class Pathfinding {
   private position: vec2;
@@ -280,7 +296,12 @@ class Pathfinding {
   private positionGoal: vec2;
   private rotationGoal: num;
 
-  constructor() {}
+  private obstacles: vec2[];
+
+  constructor() {
+    // TODO calculate/get them and update them later
+    this.obstacles = [];
+  }
 
   public setPos(position: vec2, rotation: num): void {
     this.position = position;
@@ -316,3 +337,6 @@ namespace Constants {
   const ballCageRelativPosition: vec2 = { x: 0, y: 0 };
 }
 // #endregion
+
+const EV3: Robo = new Robo();
+EV3.main();
