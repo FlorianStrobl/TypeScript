@@ -315,7 +315,53 @@ class Pathfinding {
 
   public getPath(): pathIntructions[] {
     // main function
+
+    // interpolation later
+    const possibleTurns: num[] = [-40, -30, -20, -10, -5, 0, 5, 10, 20, 30, 40]; // in degree
+    const possibleDistances: num[] = [-10, -5, -1, 0, 1, 5, 10]; // in cm
+
+    let possibilities: { cost: num; turn: num; dist: num }[] = [];
+    for (let i = 0; i < possibleTurns.length; ++i) {
+      for (let y = 0; y < possibleDistances.length; ++y) {
+        const travelCost: num = this.travelCost(
+          possibleDistances[y],
+          possibleTurns[i]
+        );
+        const goalCost: num = this.goalCost(
+          possibleDistances[y],
+          possibleTurns[i]
+        ); // heuristic
+        possibilities.push({
+          cost: travelCost + goalCost,
+          dist: possibleDistances[y],
+          turn: possibleTurns[i]
+        });
+      }
+    }
+    // get the best three possibilities (lowest cost)
+    // TODO interpolate the best way here
+    possibilities.sort((a, b) =>
+      a.cost === b.cost ? 0 : a.cost < b.cost ? -1 : 1
+    );
+
     return [];
+  }
+
+  public drivePath(instr: pathIntructions[]): void {
+    for (const inst of instr) {
+      // set the front position
+      // drive the number of rotation necessary
+      // get the actuall number of rotation driven
+      // calculate the current position out of that number
+    }
+  }
+
+  private travelCost(distance: num, turns: num): num {
+    return 0;
+  }
+
+  private goalCost(distance: num, turns: num): num {
+    return -1;
   }
 }
 // #endregion
