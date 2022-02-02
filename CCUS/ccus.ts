@@ -334,6 +334,23 @@ class CCUS {
     }
   }
 
+  // TODO, CCUS code as string to ASM instructions as string
+  public static CCUStoASM(sourceCode: string): {
+    originalSourceCode: string;
+    tokensOfSourceCode: {
+      content: string;
+      type: tokenType;
+      index: number;
+      line: number;
+    }[];
+    preprocessedSourceCode: string;
+    codeLogicTree: any;
+    asmInstructions: string[];
+  } {
+    // @ts-ignore
+    return [];
+  }
+
   private static callFunction(func: string, ctx: IFunctionContext): string {
     let curFunc: IFunction | undefined = undefined;
     for (const f of ctx.funcs) if (f.name === func) curFunc = f;

@@ -26,6 +26,19 @@ interface pathIntructions {
   wheelRotation: num;
   travelDistance: num;
 }
+
+// a perfect box
+interface hitbox {
+  positionOfCenter: vec2;
+  verticalLength: num;
+  horizontalLength: num;
+  active: bool; // starts by being there, but gets deactive if it gets moved
+}
+
+interface simpleHitbox {
+  cornerUpLeft: vec2;
+  cornerDownRight: vec2;
+}
 // #endregion
 
 // #region enums
@@ -183,10 +196,16 @@ class GameField {
   private water1Loaded: information; // the left one, loaded=true: water bottle on the robo
   private water2Loaded: information;
   private water3Loaded: information;
+  private water1Box: hitbox; // none const
+  private water2Box: hitbox;
+  private water3Box: hitbox;
 
   private laundryRoom1: laundryRoom; // the left one
   private laundryRoom2: laundryRoom;
   private laundryRoom3: laundryRoom;
+  private laundryRoom1Box: hitbox; // const
+  private laundryRoom2Box: hitbox;
+  private laundryRoom3Box: hitbox;
 
   constructor() {
     this.water1Loaded = information.none;
@@ -214,20 +233,23 @@ class GameField {
 // 4 instances inside Robo, data about a room
 class Room {
   private roomId: roomId; // color and id
-  private isEmpty: bool; // if it was only constructed but no data is saved
-  private solved: bool; // if the room is finished
+  private isEmpty: bool; // if obj was constructed but no real data added
+  private solved: bool; // if the room is finished, no need to come here again
 
   private markerBlockColor: color;
 
   private ball: information; // if the ball task has to be done
   private finishedBallTask: information;
+  private ballBox: hitbox;
 
   private water: information; // if the water task has to be done
   private finishedWaterTask: information;
+  private waterTableBox: hitbox; // const
 
   private laundry: information; // if the water task has to be done
   private laundryColor: color;
   private finishedLaundryTask: information;
+  private laundryBox: hitbox;
 
   constructor(roomId: roomId) {
     this.roomId = roomId;
@@ -301,6 +323,15 @@ class Pathfinding {
   constructor() {
     // TODO calculate/get them and update them later
     this.obstacles = [];
+    this.calculateHitboxes();
+  }
+
+  // TODO
+  public calculateHitboxes(...hitboxes: hitbox[][]): simpleHitbox[] {
+    // get linear hitbox array
+    // filter the deactive ones
+    // return the two corner positions
+    return [];
   }
 
   public setPos(position: vec2, rotation: num): void {
