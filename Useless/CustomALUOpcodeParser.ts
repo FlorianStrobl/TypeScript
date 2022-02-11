@@ -1,7 +1,7 @@
 // You give the function ALU() an input like "5 + 5" and it will return you the OP code for an ALU I build
 // This is for everyone, besides me, useless because I'm the only one who has this very specific ALU with these OP Codes...
-
-const operations: {[str: string]: string} = {
+('');
+const operations: { [str: string]: string } = {
   '': '0000',
   a: '0001',
   not: '1001',
@@ -14,9 +14,7 @@ const operations: {[str: string]: string} = {
 
 type OP = '' | 'a' | 'not' | 'and' | 'or' | 'xor' | '+' | '-';
 
-export function ALU(
-  input: string
-): {
+export function ALU(input: string): {
   input: string;
   code: string;
   operation: string;
@@ -116,7 +114,7 @@ export function ALU(
       DecimalToBinary(Numbers![1] ?? 0) +
       ' ';
 
-    return out +  operations[operation];
+    return out + operations[operation];
   }
 
   function GetResult(operation: OP, Numbers?: (number | null)[]) {
