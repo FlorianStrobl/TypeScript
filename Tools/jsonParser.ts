@@ -592,13 +592,13 @@ export namespace jsonStringManipulation {
   }
 }
 
-const array = new Array(133_000_000);
-for (let i = 0; i < array.length; ++i) array[i] = Math.random();
+// const array = new Array(133_000_000);
+// for (let i = 0; i < array.length; ++i) array[i] = Math.random();
 
-let sum: number = 0;
-for (let i = 0; i < array.length; ++i) sum += array[i];
+// let sum: number = 0;
+// for (let i = 0; i < array.length; ++i) sum += array[i];
 
-console.log(sum / array.length);
+// console.log(sum / array.length);
 
 // #region outside
 function trimValueWhitespaces(str: string): string {
@@ -1034,3 +1034,6 @@ function intToFrac2(number: string): number {
 //);
 
 //console.log(isJsonString.SpecialSearches.isInteger('-0.05e2'));
+
+const value = Json.parse('{ "myKey": 5, "array": [true, null, "whaat"] }');
+console.log(Json.prettify(Json.stringify(value), '  '));
