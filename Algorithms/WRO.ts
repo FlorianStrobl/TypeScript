@@ -1,7 +1,10 @@
 // no null/undefined cause it wont be recognised correctly by the lego robo
-// ball, ball cage, laundry, laundry room, water, water table, markerBlock
+// ball, ballCage, laundry, laundryRoom, water, waterTable, markerBlock
 // TODO obstacle positions
 // http://ai.stanford.edu/~ddolgov/papers/dolgov_gpp_stair08.pdf
+
+// no "new" keyword, no null/undefined, keine STRINGs,
+// keine ENUMS => const enums
 
 // #region types
 type num = number;
@@ -416,4 +419,4 @@ namespace Constants {
 // #endregion
 
 const EV3: Robo = new Robo();
-EV3.main();
+EV3.main(); // start the challange
