@@ -7,10 +7,10 @@ namespace Blacklist {
    */
   // TODO inside of a word differently (start+end)?
   const probDecrease: { [key: string]: number } = {
-    notStart: 20, // bc -> abc
-    notEnd: 20, // ab -> abc
     charsBetween: 10, // ac -> abc
     charsMissing: 20 // abc -> ac
+    //notStart: 20, // bc -> abc
+    //notEnd: 20, // ab -> abc
     //charReplace: 5    // abc -> acc
     //swappedChars: 30, // ab -> ba TODO
   };
