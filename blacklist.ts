@@ -43,23 +43,61 @@ namespace findWord {
         foundWordsByName[foundWord.word] = [foundWord];
       else foundWordsByName[foundWord.word].push(foundWord);
 
-    // sort the groups by probability
-    for (const word of Object.keys(foundWordsByName))
-      foundWordsByName[word] = foundWordsByName[word].sort(
-        (w1, w2) => w2.probability - w1.probability
-      );
+    // sort the groups by probability, NOT NEEDED
+    // for (const word of Object.keys(foundWordsByName))
+    //   foundWordsByName[word] = foundWordsByName[word].sort(
+    //     (w1, w2) => w2.probability - w1.probability
+    //   );
+
+    const answer: wordPosition[] = [];
+
+    // TODO DEBUG
+    for (const key in foundWordsByName)
+      for (let i = 0; i < foundWordsByName[key].length; ++i)
+        if (foundWordsByName[key][i].probability === 70) {
+          foundWordsByName[key][i].index = -1;
+          foundWordsByName[key][i].length = -1;
+        }
 
     // remove values which are the same word and overlapp with another instance of that same word
     // at the SAME overlapping index but with lower probabilty
-    for (const word of Object.keys(foundWordsByName))
-      foundWordsByName[word] = foundWordsByName[word].filter(
-        (value, index, array) =>
-          array.some(
-            (v) => v.probability > value.probability && /*overlapping*/ false
+    for (const word of Object.keys(foundWordsByName)) {
+      let workingFlags: wordPosition[] = foundWordsByName[word];
+      const toRemoveIndexes: number[] = [];
+
+      for (let i = 0; i < workingFlags.length; ++i) {
+        const current: wordPosition = workingFlags[i];
+
+        if (
+          workingFlags.some(
+            (value, index) =>
+              index !== i &&
+              current.probability < value.probability &&
+              ((current.index >= value.index &&
+                current.index <=
+                  value.index +
+                    value.length) /*overlap by start index in between*/ ||
+                (current.index + current.length >= value.index &&
+                  current.index + current.length <=
+                    value.index +
+                      value.length) /*overlap by end index in between*/ ||
+                (current.index <= value.index &&
+                  current.index + current.length >=
+                    value.index +
+                      value.length)) /*overlap by both start and end outside*/
           )
+        )
+          toRemoveIndexes.push(i);
+      }
+
+      workingFlags = workingFlags.filter(
+        (v, index) => !toRemoveIndexes.includes(index)
       );
 
-    return Object.values(foundWordsByName).reduce((l, r) => [...l, ...r]);
+      answer.push(...workingFlags);
+    }
+
+    return answer;
   }
 
   function normaliseText(text: string): string {
