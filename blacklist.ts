@@ -1,10 +1,10 @@
 namespace findWord {
   interface wordPosition {
-    word: string;
+    matchedWord: string;
+    rawMatch: string;
     index: number;
     length: number;
     probability: number;
-    rawString: string;
   }
 
   // obfuscating the word
@@ -17,12 +17,31 @@ namespace findWord {
     //swappedChars: 30, // ab -> ba
   };
 
+  // letter allisases
+  const characters: { char: string; aliases: string[] }[] = [
+    { char: 'a', aliases: 'âäàáåãªæ@4'.split('') },
+    { char: 'b', aliases: '8'.split('') },
+    { char: 'c', aliases: 'ç¢'.split('') },
+    { char: 'e', aliases: 'éêëè€3'.split('') },
+    { char: 'f', aliases: 'ƒ'.split('') },
+    { char: 'i', aliases: 'ïîìíı!1'.split('') },
+    { char: 'l', aliases: '£'.split('') },
+    { char: 'n', aliases: 'ñ'.split('') },
+    { char: 'o', aliases: 'ôöòóõø¤ðº0'.split('') },
+    { char: 'p', aliases: '¶'.split('') },
+    { char: 's', aliases: '$ß§5'.split('') },
+    { char: 't', aliases: '7'.split('') },
+    { char: 'u', aliases: 'ûüùúµ'.split('') },
+    { char: 'x', aliases: '×'.split('') },
+    { char: 'y', aliases: 'ÿý¥'.split('') }
+  ];
+
   export function checkForWord(
     text: string,
     wordlist: string[]
   ): wordPosition[] {
     text = normaliseText(text);
-    wordlist = wordlist.map((s) => normaliseText(s).replace(/ /g, ''));
+    wordlist = wordlist.map((word) => normaliseText(word).replace(/ /g, ''));
 
     const foundWords: wordPosition[] = [];
 
@@ -32,16 +51,21 @@ namespace findWord {
         if (ans !== null) foundWords.push(ans);
       }
 
+    console.log('hi', foundWords);
+
     // remove double findings of a word,
     // by getting all the ones with the same flagged word
     // and the same overlapping index + checking for the highest probability
 
     // group them by flagged words
     const foundWordsByName: { [word: string]: wordPosition[] } = {};
-    for (const foundWord of foundWords)
-      if (!Object.keys(foundWordsByName).includes(foundWord.word))
-        foundWordsByName[foundWord.word] = [foundWord];
-      else foundWordsByName[foundWord.word].push(foundWord);
+    for (const entry of foundWords.values())
+      (foundWordsByName[entry.matchedWord] ||= []).push(entry);
+
+    //for (const foundWord of foundWords)
+    //  if (!Object.keys(foundWordsByName).includes(foundWord.matchedWord))
+    //    foundWordsByName[foundWord.matchedWord] = [foundWord]; // add this word
+    //  else foundWordsByName[foundWord.matchedWord].push(foundWord); // push this word as it exists already
 
     // sort the groups by probability, NOT NEEDED
     // for (const word of Object.keys(foundWordsByName))
@@ -49,19 +73,19 @@ namespace findWord {
     //     (w1, w2) => w2.probability - w1.probability
     //   );
 
-    const answer: wordPosition[] = [];
-
     // TODO DEBUG
-    for (const key in foundWordsByName)
-      for (let i = 0; i < foundWordsByName[key].length; ++i)
-        if (foundWordsByName[key][i].probability === 70) {
-          foundWordsByName[key][i].index = -1;
-          foundWordsByName[key][i].length = -1;
-        }
+    // for (const key in foundWordsByName)
+    //   for (let i = 0; i < foundWordsByName[key].length; ++i)
+    //     if (foundWordsByName[key][i].probability === 70) {
+    //       foundWordsByName[key][i].index = -1;
+    //       foundWordsByName[key][i].length = -1;
+    //     }
+
+    const answer: wordPosition[] = [];
 
     // remove values which are the same word and overlapp with another instance of that same word
     // at the SAME overlapping index but with lower probabilty
-    for (const word of Object.keys(foundWordsByName)) {
+    for (const word in foundWordsByName) {
       let workingFlags: wordPosition[] = foundWordsByName[word];
       const toRemoveIndexes: number[] = [];
 
@@ -69,81 +93,52 @@ namespace findWord {
         const current: wordPosition = workingFlags[i];
 
         if (
-          workingFlags.some(
-            (value, index) =>
-              index !== i &&
-              current.probability < value.probability &&
-              ((current.index >= value.index &&
+          workingFlags.some((value, index) => {
+            const overlapps: boolean =
+              (current.index >= value.index &&
                 current.index <=
                   value.index +
                     value.length) /*overlap by start index in between*/ ||
-                (current.index + current.length >= value.index &&
-                  current.index + current.length <=
-                    value.index +
-                      value.length) /*overlap by end index in between*/ ||
-                (current.index <= value.index &&
-                  current.index + current.length >=
-                    value.index +
-                      value.length)) /*overlap by both start and end outside*/
-          )
+              (current.index + current.length >= value.index &&
+                current.index + current.length <=
+                  value.index +
+                    value.length) /*overlap by end index in between*/ ||
+              (current.index <= value.index &&
+                current.index + current.length >=
+                  value.index +
+                    value.length); /*overlap by both start and end outside*/
+            return (
+              index !== i &&
+              current.probability < value.probability &&
+              overlapps
+            );
+          })
         )
           toRemoveIndexes.push(i);
       }
 
-      workingFlags = workingFlags.filter(
-        (v, index) => !toRemoveIndexes.includes(index)
+      // "return" all the values for this word without the duplicated (the ones in "toRemoveIndexes")
+      answer.push(
+        ...workingFlags.filter((v, index) => !toRemoveIndexes.includes(index))
       );
-
-      answer.push(...workingFlags);
     }
 
     return answer;
   }
 
   function normaliseText(text: string): string {
-    return removeInvalidChars(replaceSpecialChars(text.toLowerCase()));
-
-    // TODO "aaa+" => "aa"
-    function replaceSpecialChars(s: string): string {
-      // TODO, æ, numbers
-      const characters: { char: string; aliases: string[] }[] = [
-        { char: 'a', aliases: 'âäàáåãª@4'.split('') },
-        { char: 'b', aliases: ['8'] },
-        { char: 'c', aliases: ['ç', '¢'] },
-        { char: 'e', aliases: 'éêëè€3'.split('') },
-        { char: 'f', aliases: ['ƒ'] },
-        { char: 'i', aliases: 'ïîìíı!'.split('') },
-        { char: 'l', aliases: ['£'] },
-        { char: 'n', aliases: ['ñ'] },
-        { char: 'o', aliases: 'ôöòóõø¤ðº0'.split('') },
-        { char: 'p', aliases: ['¶'] },
-        { char: 's', aliases: '$ß§5'.split('') },
-        { char: 'u', aliases: 'ûüùúµ'.split('') },
-        { char: 'x', aliases: ['×'] },
-        { char: 'y', aliases: 'ÿý¥'.split('') }
-      ];
-
-      // go through each character and replace it if it is inside
-      // the "characters" object
-      return s
-        .split('')
-        .map((char) => {
-          let ans: string = char;
-          characters.forEach((c) => {
-            if (c.aliases.includes(char)) ans = c.char;
-          });
-          return ans;
-        })
-        .join('')
-        .replace(/(.)\1\1+/g, '$1$1');
-    }
-
-    function removeInvalidChars(s: string): string {
-      return s
-        .split('')
-        .map((char) => (!!char.match(/[a-z0-9]/) ? char : ' '))
-        .join('');
-    }
+    return text
+      .toLowerCase() // lower case
+      .split('')
+      .map((char) => {
+        let ans: string = char;
+        characters.forEach((c) => {
+          if (c.aliases.includes(char)) ans = c.char; // replace alliases
+        });
+        return !!ans.match(/a-z0-9/) ? ans : ' '; // only letters and numbers
+      })
+      .join('')
+      .replace(/(.)\1\1+/g, '$1$1'); // "aaa+" => "aa", up to 2 repeating characters
   }
 
   function findWord(
@@ -196,11 +191,11 @@ namespace findWord {
 
     if (found === true)
       return {
-        word: word,
+        matchedWord: word,
         index: index,
         length: foundIndex - index,
         probability: probabilty,
-        rawString: originalText.slice(index, foundIndex)
+        rawMatch: originalText.slice(index, foundIndex)
       };
     else return null;
   }
