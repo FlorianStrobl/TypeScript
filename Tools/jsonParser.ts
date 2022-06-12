@@ -150,6 +150,7 @@ export namespace isPrimitive {
 
   // n can't be infinite or a nan
   export function isNumber(n: unknown): n is number {
+    // TODO, Infinity => null
     return typeof n === 'number' && !Number.isNaN(n) && Number.isFinite(n);
   }
 
@@ -1037,3 +1038,4 @@ function intToFrac2(number: string): number {
 
 const value = Json.parse('{ "myKey": 5, "array": [true, null, "whaat"] }');
 console.log(Json.prettify(Json.stringify(value), '  '));
+console.log(Json.stringify(Infinity));
