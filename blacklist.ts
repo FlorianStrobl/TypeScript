@@ -3,19 +3,18 @@ namespace findWord {
     matchedWord: string;
     rawMatch: string;
     index: number;
-    length: number;
     probability: number;
   }
 
   // obfuscating the word
-  const probabilityDecrease: { [key: string]: number } = {
-    //notStart: 20,     // bc -> abc
-    //notEnd: 20,       // ab -> abc
-    charsMissing: 20, // abc -> ac
-    charsInbetween: 10 // ac -> abc
-    //charReplace: 5    // abc -> acc
-    //swappedChars: 30, // ab -> ba
-  };
+  // const probabilityDecrease: { [key: string]: number } = {
+  //   //notStart: 20,     // bc -> abc
+  //   //notEnd: 20,       // ab -> abc
+  //   charsMissing: 20, // abc -> ac
+  //   charsInbetween: 10 // ac -> abc
+  //   //charReplace: 5    // abc -> acc
+  //   //swappedChars: 30, // ab -> ba
+  // };
 
   // letter allisases
   const characters: { char: string; aliases: string[] }[] = [
@@ -45,16 +44,25 @@ namespace findWord {
 
     const foundWords: wordPosition[] = [];
 
-    for (const word of wordlist)
+    for (const word of wordlist) {
+      let answers = [];
       for (let i = 0; i < text.length; ++i) {
-        const ans: wordPosition | null = findWord(
-          text.slice(i, word.length),
-          word
-        );
-        if (ans !== null) foundWords.push(ans);
+        // go through each char of the text
+
+        // start at -50% of the word from curChar
+        // and go until +50% of the word from curChar
+        for (
+          let y = Math.ceil(word.length * 0.5);
+          y <= Math.floor(word.length * 1.5);
+          ++y
+        )
+          answers.push(findWord(text.slice(i, i + y), word, i));
+
+        answers = answers.filter((e) => e !== null);
       }
 
-    console.log('The found words: ', foundWords);
+      foundWords.push(...answers);
+    }
 
     // remove double findings of a word,
     // by getting all the ones with the same flagged word
@@ -65,68 +73,14 @@ namespace findWord {
     for (const entry of foundWords.values())
       (foundWordsByName[entry.matchedWord] ||= []).push(entry);
 
-    //for (const foundWord of foundWords)
-    //  if (!Object.keys(foundWordsByName).includes(foundWord.matchedWord))
-    //    foundWordsByName[foundWord.matchedWord] = [foundWord]; // add this word
-    //  else foundWordsByName[foundWord.matchedWord].push(foundWord); // push this word as it exists already
+    Object.keys(foundWordsByName).map(
+      (key) =>
+        (foundWordsByName[key] = foundWordsByName[key].sort(
+          (a, b) => a.probability - b.probability
+        ))
+    );
 
-    // sort the groups by probability, NOT NEEDED
-    // for (const word of Object.keys(foundWordsByName))
-    //   foundWordsByName[word] = foundWordsByName[word].sort(
-    //     (w1, w2) => w2.probability - w1.probability
-    //   );
-
-    // TODO DEBUG
-    // for (const key in foundWordsByName)
-    //   for (let i = 0; i < foundWordsByName[key].length; ++i)
-    //     if (foundWordsByName[key][i].probability === 70) {
-    //       foundWordsByName[key][i].index = -1;
-    //       foundWordsByName[key][i].length = -1;
-    //     }
-
-    const answer: wordPosition[] = [];
-
-    // remove values which are the same word and overlapp with another instance of that same word
-    // at the SAME overlapping index but with lower probabilty
-    for (const word in foundWordsByName) {
-      let workingFlags: wordPosition[] = foundWordsByName[word];
-      const toRemoveIndexes: number[] = [];
-
-      for (let i = 0; i < workingFlags.length; ++i) {
-        const current: wordPosition = workingFlags[i];
-
-        if (
-          workingFlags.some((value, index) => {
-            const overlapps: boolean =
-              (current.index >= value.index &&
-                current.index <=
-                  value.index +
-                    value.length) /*overlap by start index in between*/ ||
-              (current.index + current.length >= value.index &&
-                current.index + current.length <=
-                  value.index +
-                    value.length) /*overlap by end index in between*/ ||
-              (current.index <= value.index &&
-                current.index + current.length >=
-                  value.index +
-                    value.length); /*overlap by both start and end outside*/
-            return (
-              index !== i &&
-              current.probability < value.probability &&
-              overlapps
-            );
-          })
-        )
-          toRemoveIndexes.push(i);
-      }
-
-      // "return" all the values for this word without the duplicated (the ones in "toRemoveIndexes")
-      answer.push(
-        ...workingFlags.filter((v, index) => !toRemoveIndexes.includes(index))
-      );
-    }
-
-    return answer;
+    return removeDuplicates(foundWordsByName);
   }
 
   function normaliseText(text: string): string {
@@ -146,20 +100,24 @@ namespace findWord {
       .replace(/(.)\1\1+/g, '$1$1'); // "aaa+" => "aa", up to 2 repeating characters
   }
 
-  function findWord(text: string, word: string): wordPosition | null {
+  function findWord(
+    text: string,
+    word: string,
+    index: number
+  ): wordPosition | null {
     const array = new Array(1000);
     const characterCodeCache = new Array(1000);
 
     const ans: wordPosition = {
       matchedWord: word,
       rawMatch: text,
-      index: -1,
-      length: -1,
+      index: index,
       probability: leven(text, word)
     };
 
-    if (ans.probability !== 0) return null;
-    else return ans;
+    if (word.length * 0.3 >= ans.probability) {
+      return ans;
+    } else return null;
 
     function leven(first: string, second: string): number {
       if (first === second) return 0; // is the same
@@ -243,6 +201,53 @@ namespace findWord {
     }
   }
 
+  function removeDuplicates(foundWordsByName: {
+    [word: string]: wordPosition[];
+  }) {
+    // remove values which are the same word and overlapp with another instance of that same word
+    // at the SAME overlapping index but with lower probabilty
+    for (const word in foundWordsByName) {
+      const toStayIndexes: number[] = [];
+      let workingFlags: wordPosition[] = foundWordsByName[word];
+
+      for (let i = 0; i < workingFlags.length; ++i) {
+        const current: wordPosition = workingFlags[i];
+
+        if (
+          workingFlags.some((value, index) => {
+            const overlapps: boolean =
+              (current.index >= value.index &&
+                current.index <=
+                  value.index +
+                    value.rawMatch
+                      .length) /*overlap by start index in between*/ ||
+              (current.index + current.rawMatch.length >= value.index &&
+                current.index + current.rawMatch.length <=
+                  value.index +
+                    value.rawMatch
+                      .length) /*overlap by end index in between*/ ||
+              (current.index <= value.index &&
+                current.index + current.rawMatch.length >=
+                  value.index +
+                    value.rawMatch
+                      .length); /*overlap by both start and end outside*/
+            return (
+              overlapps &&
+              index !== i &&
+              current.probability < value.probability
+            );
+          })
+        )
+          toStayIndexes.push(i);
+      }
+
+      // "return" all the values for this word without the duplicated (the ones in "toRemoveIndexes")
+      return [
+        ...workingFlags.filter((_, index) => !toStayIndexes.includes(index))
+      ];
+    }
+  }
+
   /*
   function findWord(
     text: string,
@@ -305,4 +310,25 @@ namespace findWord {
 }
 
 // "abcd  zabcd  abcdz  acd  abzcd  abzd  acbd  |  accd"
-console.log(findWord.checkForWord('  zz@bcdzz  zzabcdzz  ', ['abcd']));
+console.log(
+  findWord.checkForWord(' this is a sentence with b@ddww0rd test', ['badword'])
+);
+
+//for (const foundWord of foundWords)
+//  if (!Object.keys(foundWordsByName).includes(foundWord.matchedWord))
+//    foundWordsByName[foundWord.matchedWord] = [foundWord]; // add this word
+//  else foundWordsByName[foundWord.matchedWord].push(foundWord); // push this word as it exists already
+
+// sort the groups by probability, NOT NEEDED
+// for (const word of Object.keys(foundWordsByName))
+//   foundWordsByName[word] = foundWordsByName[word].sort(
+//     (w1, w2) => w2.probability - w1.probability
+//   );
+
+// TODO DEBUG
+// for (const key in foundWordsByName)
+//   for (let i = 0; i < foundWordsByName[key].length; ++i)
+//     if (foundWordsByName[key][i].probability === 70) {
+//       foundWordsByName[key][i].index = -1;
+//       foundWordsByName[key][i].length = -1;
+//     }
