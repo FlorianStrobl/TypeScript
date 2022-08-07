@@ -278,7 +278,7 @@ namespace findWord {
   }
 }
 
-// TODO, fix "acbd", "abbcd", "zbcd", "abcz", "abcbd", "aabbccdd", 
+// TODO, fix "acbd", "abbcd", "zbcd", "abcz", "abcbd", "aabbccdd",
 
 // TODO, test it with rust message type styl!!
 
