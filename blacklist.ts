@@ -1,9 +1,13 @@
+// @ts-ignore
+import * as logg from './logtest';
+
 namespace findWord {
   interface wordPosition {
     matchedWord: string;
     rawMatch: string;
     index: number;
     probability: number;
+    checkedString: string; // the filtered string
   }
 
   // obfuscating the word
@@ -45,20 +49,25 @@ namespace findWord {
     const foundWords: wordPosition[] = [];
 
     for (const word of wordlist) {
-      let answers = [];
+      let answers: wordPosition[] = [];
       for (let i = 0; i < text.length; ++i) {
         // go through each char of the text
 
         // start at -50% of the word from curChar
         // and go until +50% of the word from curChar
         for (
-          let y = Math.ceil(word.length * 0.5);
-          y <= Math.floor(word.length * 1.5);
+          let y = Math.floor(word.length * 0.5);
+          y <= Math.ceil(word.length * 1.5) && i + y <= text.length;
           ++y
         )
           answers.push(findWord(text.slice(i, i + y), word, i));
 
-        answers = answers.filter((e) => e !== null);
+        answers = answers
+          .filter((e) => e !== null)
+          .map((e) => {
+            e.checkedString = text; // add the used string
+            return e;
+          });
       }
 
       foundWords.push(...answers);
@@ -83,23 +92,6 @@ namespace findWord {
     return removeDuplicates(foundWordsByName);
   }
 
-  function normaliseText(text: string): string {
-    return text
-      .toLowerCase() // lower case
-      .split('')
-      .map((char) => {
-        //return char; // TODO
-        let ans: string = char;
-        characters.forEach((c) => {
-          if (c.aliases.includes(char)) ans = c.char; // replace alliases
-        });
-        const ret = !ans.match(/a-z0-9/) ? ans : ' ';
-        return ret; // only letters and numbers
-      })
-      .join('')
-      .replace(/(.)\1\1+/g, '$1$1'); // "aaa+" => "aa", up to 2 repeating characters
-  }
-
   function findWord(
     text: string,
     word: string,
@@ -108,6 +100,7 @@ namespace findWord {
     const array = new Array(1000);
     const characterCodeCache = new Array(1000);
 
+    // @ts-ignore
     const ans: wordPosition = {
       matchedWord: word,
       rawMatch: text,
@@ -115,6 +108,7 @@ namespace findWord {
       probability: leven(text, word)
     };
 
+    // TODO, is 30% a good choice?
     if (word.length * 0.3 >= ans.probability) {
       return ans;
     } else return null;
@@ -139,7 +133,8 @@ namespace findWord {
       // Note: `~-` is the bitwise way to perform a `- 1` operation
       while (
         firstLength > 0 &&
-        first.charCodeAt(~-firstLength) === second.charCodeAt(~-secondLength)
+        first.charCodeAt(firstLength - 1) ===
+          second.charCodeAt(secondLength - 1)
       ) {
         firstLength--;
         secondLength--;
@@ -201,13 +196,32 @@ namespace findWord {
     }
   }
 
+  export function normaliseText(text: string): string {
+    return text
+      .toLowerCase() // lower case
+      .split('')
+      .map((char) => {
+        //return char; // TODO
+        let ans: string = char;
+        characters.forEach((c) => {
+          if (c.aliases.includes(char)) ans = c.char; // replace alliases
+        });
+        const ret = !ans.match(/a-z0-9/) ? ans : ' ';
+        return ret; // only letters and numbers
+      })
+      .join('')
+      .replace(/(.)\1\1+/g, '$1$1'); // "aaa+" => "aa", up to 2 repeating characters
+  }
+
   function removeDuplicates(foundWordsByName: {
     [word: string]: wordPosition[];
   }) {
+    const results: wordPosition[] = [];
+
     // remove values which are the same word and overlapp with another instance of that same word
     // at the SAME overlapping index but with lower probabilty
     for (const word in foundWordsByName) {
-      const toStayIndexes: number[] = [];
+      const toRemoveFlagsIndexes: number[] = [];
       let workingFlags: wordPosition[] = foundWordsByName[word];
 
       for (let i = 0; i < workingFlags.length; ++i) {
@@ -215,6 +229,9 @@ namespace findWord {
 
         if (
           workingFlags.some((value, index) => {
+            if (index === i) return false; // if we are talking about the same flag, we shoudlnt do something
+
+            // check if we are talking about the same substring
             const overlapps: boolean =
               (current.index >= value.index &&
                 current.index <=
@@ -231,24 +248,98 @@ namespace findWord {
                   value.index +
                     value.rawMatch
                       .length); /*overlap by both start and end outside*/
+
+            // console.log(
+            //   current.index,
+            //   value.index,
+            //   overlapps,
+            //   current.probability < value.probability
+            // );
             return (
-              overlapps &&
-              index !== i &&
-              current.probability < value.probability
+              overlapps && // its the same substring we are talking about
+              current.probability > value.probability // current probability is higher than one alternative
+              // case: "tesl", "tes" is one off, but "tesl" aswell
+              // case: "lest", "est" and "lest" are one off
             );
           })
         )
-          toStayIndexes.push(i);
+          toRemoveFlagsIndexes.push(i);
       }
 
       // "return" all the values for this word without the duplicated (the ones in "toRemoveIndexes")
-      return [
-        ...workingFlags.filter((_, index) => !toStayIndexes.includes(index))
-      ];
+      results.push(
+        ...workingFlags.filter(
+          (_, index) => !toRemoveFlagsIndexes.includes(index)
+        )
+      );
     }
-  }
 
-  /*
+    return results;
+  }
+}
+
+// TODO, fix "acbd", "abbcd", "zbcd", "abcz", "abcbd", "aabbccdd", 
+
+// TODO, test it with rust message type styl!!
+
+//' testtest this lest is a tesl sentence with b@ddww0rd t€st',
+//  ['badword', 'test'];
+
+// 'abcd  zabcd  abcdz  acd  abzcd  abzd  acbd abcdabcd bacd zbcd abcz aabcd abcdd abbcd aabbccdd aaabbbcccddd aaabcccd abcbd | accd'
+//console.log(
+findWord
+  .checkForWord(
+    'abcd  zabcd  abcdz  acd  abzcd  abzd  acbd abcdabcd bacd zbcd abcz aabcd abcdd abbcd aabbccdd aaabbbcccddd aaabcccd abcbd | accd',
+    ['abcd']
+  )
+  .sort((a, b) => a.index - b.index)
+  .forEach((res) => {
+    logg.logger.logInfo(
+      { author: '', fileName: '' },
+      findWord.normaliseText(
+        'abcd  zabcd  abcdz  acd  abzcd  abzd  acbd abcdabcd bacd zbcd abcz aabcd abcdd abbcd aabbccdd aaabbbcccddd aaabcccd abcbd | accd'
+      ),
+      [
+        {
+          index: res.index,
+          length: res.rawMatch.length,
+          markColor: 1,
+          message: `Matched the word "abcd" with the substring "${
+            res.rawMatch
+          }". The probability of a correct match is ${
+            (4 - res.probability) / 4
+          }`,
+          infoCode: 'none',
+          infoType: 'warning',
+          infoDescription: ''
+        }
+      ],
+      true
+    );
+  });
+
+//);
+
+//for (const foundWord of foundWords)
+//  if (!Object.keys(foundWordsByName).includes(foundWord.matchedWord))
+//    foundWordsByName[foundWord.matchedWord] = [foundWord]; // add this word
+//  else foundWordsByName[foundWord.matchedWord].push(foundWord); // push this word as it exists already
+
+// sort the groups by probability, NOT NEEDED
+// for (const word of Object.keys(foundWordsByName))
+//   foundWordsByName[word] = foundWordsByName[word].sort(
+//     (w1, w2) => w2.probability - w1.probability
+//   );
+
+// TODO DEBUG
+// for (const key in foundWordsByName)
+//   for (let i = 0; i < foundWordsByName[key].length; ++i)
+//     if (foundWordsByName[key][i].probability === 70) {
+//       foundWordsByName[key][i].index = -1;
+//       foundWordsByName[key][i].length = -1;
+//     }
+
+/*
   function findWord(
     text: string,
     index: number,
@@ -307,28 +398,3 @@ namespace findWord {
       };
     else return null;
   }*/
-}
-
-// "abcd  zabcd  abcdz  acd  abzcd  abzd  acbd  |  accd"
-console.log(
-  findWord.checkForWord(' this is a sentence with b@ddww0rd test', ['badword'])
-);
-
-//for (const foundWord of foundWords)
-//  if (!Object.keys(foundWordsByName).includes(foundWord.matchedWord))
-//    foundWordsByName[foundWord.matchedWord] = [foundWord]; // add this word
-//  else foundWordsByName[foundWord.matchedWord].push(foundWord); // push this word as it exists already
-
-// sort the groups by probability, NOT NEEDED
-// for (const word of Object.keys(foundWordsByName))
-//   foundWordsByName[word] = foundWordsByName[word].sort(
-//     (w1, w2) => w2.probability - w1.probability
-//   );
-
-// TODO DEBUG
-// for (const key in foundWordsByName)
-//   for (let i = 0; i < foundWordsByName[key].length; ++i)
-//     if (foundWordsByName[key][i].probability === 70) {
-//       foundWordsByName[key][i].index = -1;
-//       foundWordsByName[key][i].length = -1;
-//     }
