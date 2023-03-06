@@ -40,12 +40,10 @@ const timeUnitValues: { [index: string]: number } = {
   cen: 1000 * 60 * 60 * 24 * 365 * 100
 };
 
-
 export function timeStringToMS(timeStr: string): number | undefined {
   // get values
-  const values:
-    | { numberPart: string; unit: string }[]
-    | undefined = getUnitAndNumber(timeStr);
+  const values: { numberPart: string; unit: string }[] | undefined =
+    getUnitAndNumber(timeStr);
 
   // check values for errors
   if (values === undefined) return undefined;
@@ -70,10 +68,7 @@ function getUnitAndNumber(
   // /[^0-9.,:]/g = regex for getting all the chars in a string which are not equal to 0-9.,:
 
   // format string basics (lowercase and no spaces)
-  timeStr = timeStr
-    .toLowerCase()
-    .split(' ')
-    .join('');
+  timeStr = timeStr.toLowerCase().split(' ').join('');
 
   // get the numbers and units in a single string (and format the time strings)
   const unit: string = timeStr.replace(/[0-9.,:]/g, ' ');

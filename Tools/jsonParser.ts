@@ -1038,4 +1038,6 @@ function intToFrac2(number: string): number {
 
 const value = Json.parse('{ "myKey": 5, "array": [true, null, "whaat"] }');
 console.log(Json.prettify(Json.stringify(value), '  '));
-console.log(Json.stringify(Infinity));
+//console.log(Json.stringify(Infinity));
+
+console.log(Json.parse(`[1,[2,[3,[4,[5,6,7]]]],8,9]`));
