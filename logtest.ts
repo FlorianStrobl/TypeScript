@@ -337,6 +337,28 @@ export namespace logger {
   }
 }
 
+/** Example
+logger.logInfo(
+  {
+    fileName: 'Lambda Calculus',
+    author: 'Florian'
+  },
+  '(λx.x)(5',
+  [
+    {
+      index: 6,
+      length: 2,
+      markColor: 31,
+      message: 'You have to close this braket',
+      infoCode: '0000',
+      infoType: 'error',
+      infoDescription: 'Missing closing parenthesis'
+    }
+  ],
+  true
+);
+*/
+
 /**
  *   // TODO wrong numeric literals!
   const defaultErrorMsg = [
