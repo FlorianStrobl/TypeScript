@@ -103,6 +103,7 @@ class AStars {
     while (true) {
       // get the cheapest explored node
       let cheapestNode: vec = this.getCheapestNode();
+
       // no more nodes to traverse there
       if (cheapestNode.x === -1) break;
 
@@ -499,9 +500,7 @@ class AStars {
   }
 }
 
-const pathFinding = new AStars(10, 10, { x: 0, y: 0 }, { x: 9, y: 9 }, [
-  { x: 8, y: 8 }
-]);
+const pathFinding = new AStars(10, 10, { x: 0, y: 0 }, { x: 9, y: 9 }, []);
 
 const _path = pathFinding.pathfinding();
 
